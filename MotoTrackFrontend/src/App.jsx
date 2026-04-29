@@ -1,80 +1,91 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import { PrimaryColorProvider } from './context/PrimaryColorContext';
-import { ThemeProvider } from './context/ThemeContext';
-import { LanguageProvider } from './context/LanguageContext';
-import { NotificationProvider } from './components/Dashboard/CommonComponts/ToastNotifications';
-import { ConfigProvider, App as AntApp } from 'antd';
-import Login from './pages/Auth/LogIn';
-import Register from './pages/Auth/Register';
-import Admin from './pages/Dashboard/Admin/AdminDashboard';
-import AdminSolicitudes from './pages/Dashboard/Admin/AdminSolicitudes';
-import AdminEmpleados from './pages/Dashboard/Admin/AdminGestionEmpleado';
-import EmpleadoDashboard from './pages/Dashboard/Empleado/EmpleadoDashboard';
-import EmpleadoGestion from './pages/Dashboard/Empleado/EmpleadoGestion';
-import Layout from './Layout/Layout';
-import CiudadanoDashboardPage from './pages/Dashboard/Ciudadano/CiudadanoDashboardPage';
-import RegistrarPage from './pages/Dashboard/Ciudadano/RegistrarPage';
-import MotocicletasPage from './pages/Dashboard/Ciudadano/MotocicletasPage';
-import LandingPage from './pages/LandingPage/LandingPage';
-import LoadingOverlay from './components/LoadingOverlay';
+import React, { lazy, Suspense } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { PrimaryColorProvider } from "./context/PrimaryColorContext";
+import { ThemeProvider } from "./context/ThemeContext";
+import { LanguageProvider } from "./context/LanguageContext";
+import { NotificationProvider } from "./components/Dashboard/CommonComponts/ToastNotifications";
+import { ConfigProvider, App as AntApp } from "antd";
+import LoadingOverlay from "./components/LoadingOverlay";
 
-// Updated ProtectedRoute component that uses the auth context
+// ✅ These stay as static imports (always needed immediately)
+import Login from "./pages/Auth/LogIn";
+import Register from "./pages/Auth/Register";
+import LandingPage from "./pages/LandingPage/LandingPage";
+import Layout from "./Layout/Layout";
+
+// ✅ Lazy-load all dashboard pages (only loaded when the user navigates there)
+const Admin = lazy(() => import("./pages/Dashboard/Admin/AdminDashboard"));
+const AdminSolicitudes = lazy(
+  () => import("./pages/Dashboard/Admin/AdminSolicitudes"),
+);
+const AdminEmpleados = lazy(
+  () => import("./pages/Dashboard/Admin/AdminGestionEmpleado"),
+);
+const EmpleadoDashboard = lazy(
+  () => import("./pages/Dashboard/Empleado/EmpleadoDashboard"),
+);
+const EmpleadoGestion = lazy(
+  () => import("./pages/Dashboard/Empleado/EmpleadoGestion"),
+);
+const CiudadanoDashboardPage = lazy(
+  () => import("./pages/Dashboard/Ciudadano/CiudadanoDashboardPage"),
+);
+const RegistrarPage = lazy(
+  () => import("./pages/Dashboard/Ciudadano/RegistrarPage"),
+);
+const MotocicletasPage = lazy(
+  () => import("./pages/Dashboard/Ciudadano/MotocicletasPage"),
+);
+
+// Reusable fallback
+const PageLoader = () => (
+  <LoadingOverlay isLoading={true} text="Cargando página..." />
+);
+
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { currentUser, isAuthenticated, loading } = useAuth();
 
-   // Add a check for loading state
-   if (loading) {
-    // Return a loading indicator or null while checking authentication
-    return <LoadingOverlay isLoading={loading} text="Cargando página..."/>
+  if (loading) {
+    return <PageLoader />;
   }
-
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-  
   if (!allowedRoles.includes(currentUser.role)) {
-    // Redirect based on role
-    if (currentUser.role === 'administrador') {
+    if (currentUser.role === "administrador")
       return <Navigate to="/panel/admin" replace />;
-    } else if (currentUser.role === 'empleado') {
+    if (currentUser.role === "empleado")
       return <Navigate to="/panel/empleado" replace />;
-    } else {
-      return <Navigate to="/panel/ciudadano" replace />;
-    }
+    return <Navigate to="/panel/ciudadano" replace />;
   }
-  
   return children;
 };
 
-// Dashboard Routes with its own NotificationProvider that has access to theme
-const DashboardRoutes = () => {
-  return (
-    <PrimaryColorProvider>
-      <ThemeProvider>
-        <NotificationProvider>
-          <Layout />
-        </NotificationProvider>
-      </ThemeProvider>
-    </PrimaryColorProvider>
-  );
-};
+const DashboardRoutes = () => (
+  <PrimaryColorProvider>
+    <ThemeProvider>
+      <NotificationProvider>
+        <Layout />
+      </NotificationProvider>
+    </ThemeProvider>
+  </PrimaryColorProvider>
+);
 
-// Public Routes with light theme only
-const PublicRoutes = () => {
-  return (
+const PublicRoutes = () => (
+  // ✅ Single Suspense wrapper covers all lazy routes
+  <Suspense fallback={<PageLoader />}>
     <Routes>
-      {/* Public routes - always have white background */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      
-      {/* Protected routes with theme */}
-      <Route 
-        path="/panel" 
+
+      <Route
+        path="/panel"
         element={
-          <ProtectedRoute allowedRoles={['administrador', 'empleado', 'ciudadano']}>
+          <ProtectedRoute
+            allowedRoles={["administrador", "empleado", "ciudadano"]}
+          >
             <DashboardRoutes />
           </ProtectedRoute>
         }
@@ -88,14 +99,12 @@ const PublicRoutes = () => {
         <Route path="ciudadano/registrar" element={<RegistrarPage />} />
         <Route path="ciudadano/motocicletas" element={<MotocicletasPage />} />
       </Route>
-      
-      {/* Redirect for unknown routes */}
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-  );
-};
+  </Suspense>
+);
 
-// Main App component
 function App() {
   return (
     <ConfigProvider>
