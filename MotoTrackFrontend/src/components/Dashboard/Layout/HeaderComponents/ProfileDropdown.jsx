@@ -23,7 +23,6 @@ import CambiarMiContraseña from './ProfileDropdownComponents.jsx/CambiarMiContr
 import EditarMiPerfil from './ProfileDropdownComponents.jsx/EditarMiPerfil';
 
 
-
 // Add global styles to properly handle submenu on mobile
 const GlobalStyles = createGlobalStyle`
   .color-submenu-responsive {
@@ -461,22 +460,22 @@ const ProfileDropdown = ({ currentUser, logout, visible, onVisibleChange }) => {
       </ResponsiveMenu>
     );
   }
-
+  
   return (
     <>
       <ResponsiveMenu theme={isDarkMode ? 'dark' : 'light'}>
         <GlobalStyles />
         <UserProfileHeader onClick={showProfileModal}>
           <UserProfileAvatar
-            src={currentUser?.profileImage}
-            icon={!currentUser?.profileImage && <UserOutlined />}
+            src={currentUser?.ftPerfil}
+            icon={!currentUser?.ftPerfil && <UserOutlined />}
             size={48}
           />
           <UserInfoContainer>
             <UserProfileName>
-              {currentUser?.firstName} {currentUser?.lastName}
+              {currentUser?.nombres} {currentUser?.apellidos}
             </UserProfileName>
-            <UserProfileEmail>{currentUser?.email}</UserProfileEmail>
+            <UserProfileEmail>{currentUser?.correo}</UserProfileEmail>
           </UserInfoContainer>
         </UserProfileHeader>
 

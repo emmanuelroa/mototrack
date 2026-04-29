@@ -1,5 +1,5 @@
-import React from 'react';
-import { Row, Col } from 'antd';
+import React, { useEffect } from 'react';
+import { Row, Col, notification } from 'antd';
 import { 
   FileSearchOutlined, 
   CheckCircleOutlined, 
@@ -9,14 +9,21 @@ import {
 import MetricCard from '../../CommonComponts/MetricCard';
 import styled from 'styled-components';
 import { useLanguage } from '../../../../context/LanguageContext';
+import { useAuth } from '../../../../context/AuthContext';
+import axios from 'axios';
 
 const MetricsContainer = styled.div`
   margin-bottom: 24px;
 `;
 
+
 function EmpleadoMetrics() {
   const { language } = useLanguage();
-  
+  const api_url = import.meta.env.VITE_API_URL;
+  const { getAccessToken } = useAuth();
+  const [metrics, setMetrics] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+
   const translations = {
     es: {
       assignedRequests: {
@@ -56,6 +63,29 @@ function EmpleadoMetrics() {
     }
   };
 
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const response = await axios.get(`${api_url}/api/statistics/empleado`, {
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`
+          }
+        });
+        if (response.data.success) {
+          setMetrics(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching metrics:', error);
+        notification.error({
+          message: language === 'es' ? 'Error' : 'Error',
+          description: language === 'es' 
+            ? 'Error al cargar las métricas' 
+            : 'Error loading metrics',
+        });
+      }
+    }
+    fetchMetrics();
+  }, []);
   const t = translations[language] || translations.es;
 
   const metricsData = [
@@ -63,7 +93,7 @@ function EmpleadoMetrics() {
       id: 1,
       title: t.assignedRequests.title,
       icon: <FileSearchOutlined />,
-      value: 1,
+      value: metrics?.solicitudes?.pendientes,
       subtitle: t.assignedRequests.subtitle,
       bubbleColor: '#fff7e6',  // Naranja claro para el fondo
       iconColor: '#fa8c16'     // Naranja para el icono
@@ -72,7 +102,7 @@ function EmpleadoMetrics() {
       id: 2,
       title: t.processedToday.title,
       icon: <CheckCircleOutlined />,
-      value: 8,
+      value: metrics?.solicitudes?.procesadasHoy,
       subtitle: t.processedToday.subtitle,
       bubbleColor: '#f6ffed',  // Verde claro para el fondo
       iconColor: '#52c41a'     // Verde para el icono
@@ -81,7 +111,7 @@ function EmpleadoMetrics() {
       id: 3,
       title: t.issuedRegistrations.title,
       icon: <IdcardOutlined />,
-      value: 32,
+      value: metrics?.solicitudes?.aprobadas,
       subtitle: t.issuedRegistrations.subtitle,
       bubbleColor: '#e6f7ff',  // Azul claro para el fondo
       iconColor: '#1890ff'     // Azul para el icono
@@ -90,7 +120,7 @@ function EmpleadoMetrics() {
       id: 4,
       title: t.approvalRate.title,
       icon: <PieChartOutlined />,
-      value: '92%',
+      value: `${metrics?.solicitudes?.tasaAprobacion}%`,
       subtitle: t.approvalRate.subtitle,
       bubbleColor: '#f9f0ff',  // Morado claro para el fondo
       iconColor: '#722ed1'     // Morado para el icono

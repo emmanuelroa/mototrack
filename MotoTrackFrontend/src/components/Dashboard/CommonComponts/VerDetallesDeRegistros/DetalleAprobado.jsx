@@ -242,27 +242,41 @@ const DetalleAprobado = ({ data = {} }) => {
   // Get current translations
   const t = translations[language] || translations.es;
   
-  // Extract relevant data from the registration object
-  const aprobacionDetalles = data.aprobacionDetalles || {};
-  const datosPersonales = data.datosPersonales || {};
-  const datosMotocicleta = data.datosMotocicleta || {};
-  
   // Format approval data
   const approvalData = {
-    fechaAprobacion: formatDate(aprobacionDetalles.fechaAprobacion) || 'Sin fecha',
-    aprobadoPor: aprobacionDetalles.aprobadoPor || 'No asignado',
-    numeroPlaca: aprobacionDetalles.numeroPlacaAsignado || datosMotocicleta.placa || 'No asignado',
-    observaciones: aprobacionDetalles.observaciones || 'Sin observaciones',
-    historial: aprobacionDetalles.historial || []
+    fechaAprobacion: formatDate(data?.solicitud?.fechaProcesada) || 'Sin fecha',
+    aprobadoPor: (data?.empleado?.nombres + " " + data?.empleado?.apellidos) || 'No asignado',
+    numeroPlaca: data?.matricula?.matriculaGenerada || 'No asignado',
+    observaciones: data?.solicitud?.detalleRechazo || 'Sin observaciones',
+    historial: [
+      {
+        estado: 'Approved',
+        fecha: data?.matricula?.fechaProcesada || 'Sin fecha',
+        responsable: `Lic. ${data?.empleado?.nombres || 'No asignado'}  ${data?.empleado?.apellidos || 'No asignado'}`,
+        descripcion: "Solicitud aprobada y placa asignada. Documentación completa.",
+      },
+      {
+        estado: 'In Review',
+        fecha: data?.solicitud?.fechaProcesada || 'Sin fecha',
+        responsable: `Lic. ${data?.empleado?.nombres || 'No asignado'}  ${data?.empleado?.apellidos || 'No asignado'}`,
+        descripcion: "Solicitud en revisión por el departamento de registro.",
+      },
+      {
+        estado: 'Received',
+        fecha: data?.solicitud?.fechaRegistro || 'Sin fecha',
+        responsable: "Sistema",
+        descripcion: "Solicitud recibida y en espera de aprobación.",
+      }
+    ]
   };
 
   // Prepare data for the carnet PDF
   const carnetData = {
     placa: approvalData.numeroPlaca,
-    propietario: datosPersonales.nombreCompleto || 'Propietario no especificado',
-    modelo: `${datosMotocicleta.marca || ''} ${datosMotocicleta.modelo || ''}`,
-    chasis: datosMotocicleta.numeroChasis || 'No especificado',
-    fechaEmision: approvalData.fechaAprobacion
+    propietario: `${data?.ciudadano?.nombres}  ${data?.ciudadano?.apellidos}` || 'Propietario no especificado',
+    modelo: `${data?.vehiculo?.modelo?.nombre || ''} ${data?.vehiculo?.marca?.nombre || ''} ${'('+ data?.vehiculo?.modelo?.año + ')' || ''}`,
+    chasis: data?.vehiculo?.chasis || 'No especificado',
+    fechaEmision: data?.matricula?.fechaEmision
   };
 
   return (

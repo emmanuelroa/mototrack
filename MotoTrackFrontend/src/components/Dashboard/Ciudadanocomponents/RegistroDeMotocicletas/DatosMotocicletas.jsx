@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Radio, InputNumber, Select, Row, Col } from 'antd';
+import { Form, Radio, InputNumber, Select, Row, Col, notification } from 'antd';
 import styled from 'styled-components';
 import Inputs from '../../CommonComponts/Inputs';
 import { useTheme } from '../../../../context/ThemeContext';
 import { useLanguage } from '../../../../context/LanguageContext';
-
+import { useAuth } from '../../../../context/AuthContext';
+import axios from 'axios';
 const { Option } = Select;
 
 const FormContainer = styled.div`
@@ -129,9 +130,15 @@ const DatosMotocicletas = ({ form }) => {
   const { theme, currentTheme } = useTheme();
   const { language } = useLanguage();
   const isDarkMode = currentTheme === 'themeDark';
-  const [hasInsurance, setHasInsurance] = useState('yes');
+  const [hasInsurance, setHasInsurance] = useState(form.getFieldValue('hasInsurance') || 'yes');
+  const [brands, setBrands] = useState([]);
+  const [models, setModels] = useState([]);
+  const [insurance, setInsurance] = useState([]);
+  const [selectedModel, setSelectedModel] = useState(null);
   const [selectedBrand, setSelectedBrand] = useState(null);
-  
+  const api_url = import.meta.env.VITE_API_URL;
+  const { getAccessToken } = useAuth();
+
   const translations = {
     es: {
       brand: 'Marca',
@@ -150,8 +157,10 @@ const DatosMotocicletas = ({ form }) => {
       useType: 'Tipo de Uso',
       useTypeRequired: 'Por favor seleccione el tipo de uso',
       personal: 'Personal',
-      commercial: 'Comercial',
-      delivery: 'Delivery',
+      commercial: 'Empresarial',
+      delivery: 'Transporte',
+      recreational: 'Recreativo',
+      sports: 'Deportivo',
       chassisNumber: 'Número de Chasis',
       chassisPlaceholder: 'Número de chasis',
       chassisRequired: 'Por favor ingrese el número de chasis',
@@ -182,8 +191,10 @@ const DatosMotocicletas = ({ form }) => {
       useType: 'Type of Use',
       useTypeRequired: 'Please select the type of use',
       personal: 'Personal',
-      commercial: 'Commercial',
-      delivery: 'Delivery',
+      commercial: 'Empresarial',
+      delivery: 'Transporte',
+      recreational: 'Recreativo',
+      sports: 'Deportivo',
       chassisNumber: 'Chassis Number',
       chassisPlaceholder: 'Chassis number',
       chassisRequired: 'Please enter the chassis number',
@@ -200,119 +211,117 @@ const DatosMotocicletas = ({ form }) => {
   };
   
   const t = translations[language] || translations.es;
-  
-  // Motorcycle brands
-  const motorcycleBrands = [
-    { value: 'honda', label: 'Honda' },
-    { value: 'yamaha', label: 'Yamaha' },
-    { value: 'suzuki', label: 'Suzuki' },
-    { value: 'kawasaki', label: 'Kawasaki' },
-    { value: 'harley_davidson', label: 'Harley-Davidson' },
-    { value: 'bmw', label: 'BMW' },
-    { value: 'ducati', label: 'Ducati' },
-    { value: 'ktm', label: 'KTM' },
-    { value: 'triumph', label: 'Triumph' },
-    { value: 'bajaj', label: 'Bajaj' },
-  ];
-  
-  // Models by brand
-  const modelsByBrand = {
-    honda: [
-      { value: 'cbr_600rr', label: 'CBR 600RR' },
-      { value: 'cbr_1000rr', label: 'CBR 1000RR' },
-      { value: 'crf_250l', label: 'CRF 250L' },
-      { value: 'rebel_500', label: 'Rebel 500' },
-      { value: 'africa_twin', label: 'Africa Twin' },
-      { value: 'goldwing', label: 'Gold Wing' },
-    ],
-    yamaha: [
-      { value: 'yzf_r6', label: 'YZF-R6' },
-      { value: 'yzf_r1', label: 'YZF-R1' },
-      { value: 'mt_07', label: 'MT-07' },
-      { value: 'mt_09', label: 'MT-09' },
-      { value: 'tenere_700', label: 'Ténéré 700' },
-    ],
-    suzuki: [
-      { value: 'gsx_r600', label: 'GSX-R600' },
-      { value: 'gsx_r750', label: 'GSX-R750' },
-      { value: 'gsx_r1000', label: 'GSX-R1000' },
-      { value: 'v_strom_650', label: 'V-Strom 650' },
-      { value: 'hayabusa', label: 'Hayabusa' },
-    ],
-    kawasaki: [
-      { value: 'ninja_400', label: 'Ninja 400' },
-      { value: 'ninja_650', label: 'Ninja 650' },
-      { value: 'ninja_zx6r', label: 'Ninja ZX-6R' },
-      { value: 'ninja_zx10r', label: 'Ninja ZX-10R' },
-      { value: 'z900', label: 'Z900' },
-    ],
-    harley_davidson: [
-      { value: 'sportster', label: 'Sportster' },
-      { value: 'street_glide', label: 'Street Glide' },
-      { value: 'road_king', label: 'Road King' },
-      { value: 'fat_boy', label: 'Fat Boy' },
-      { value: 'softail', label: 'Softail' },
-    ],
-    bmw: [
-      { value: 's1000rr', label: 'S 1000 RR' },
-      { value: 'r1250gs', label: 'R 1250 GS' },
-      { value: 'f850gs', label: 'F 850 GS' },
-      { value: 'r_nine_t', label: 'R nineT' },
-    ],
-    ducati: [
-      { value: 'panigale_v4', label: 'Panigale V4' },
-      { value: 'monster', label: 'Monster' },
-      { value: 'multistrada', label: 'Multistrada' },
-      { value: 'scrambler', label: 'Scrambler' },
-    ],
-    ktm: [
-      { value: 'duke_390', label: '390 Duke' },
-      { value: 'duke_890', label: '890 Duke' },
-      { value: 'adventure_790', label: '790 Adventure' },
-      { value: 'rc_390', label: 'RC 390' },
-    ],
-    triumph: [
-      { value: 'street_triple', label: 'Street Triple' },
-      { value: 'speed_triple', label: 'Speed Triple' },
-      { value: 'bonneville', label: 'Bonneville' },
-      { value: 'tiger_900', label: 'Tiger 900' },
-    ],
-    bajaj: [
-      { value: 'pulsar_ns200', label: 'Pulsar NS200' },
-      { value: 'pulsar_rs200', label: 'Pulsar RS200' },
-      { value: 'dominar_400', label: 'Dominar 400' },
-      { value: 'avenger', label: 'Avenger' },
-    ],
-  };
-  
+
+  // Fetch brands from API
+  useEffect(() => {
+    const fetchBrands = async () => {
+      try {
+        const response = await axios.get(`${api_url}/api/marca`, {
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+        });
+        setBrands(response.data.data);
+      } catch (error) {
+        console.error('Error fetching brands:', error);
+        notification.error({
+          message: 'Error',
+          description: 'Error fetching brands. Please try again later.',
+        });
+      }
+    }
+    fetchBrands();
+  });
+
+  const fetchModels = async (idBrand) => {
+    try {
+      const response = await axios.get(`${api_url}/api/modelo?idMarca=${idBrand}`, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+      });
+      setModels(response.data.data);
+    } catch (error) {
+      console.error('Error fetching models:', error);
+      notification.error({
+        message: language === 'es' ? 'Error' : 'Error',
+        description: language === 'es' 
+          ? 'Error al obtener los modelos. Por favor intente más tarde.' 
+          : 'Error fetching models. Please try again later.',
+      });
+    }
+  }
+
   // Mock insurance providers
   const insuranceProviders = [
-    { value: 'mapfre', label: 'Mapfre' },
-    { value: 'seguros_sura', label: 'Seguros Sura' },
-    { value: 'seguros_universal', label: 'Seguros Universal' },
-    { value: 'seguros_banreservas', label: 'Seguros Banreservas' },
-    { value: 'patria', label: 'La Colonial de Seguros' },
-    { value: 'humano', label: 'Humano Seguros' },
+    { value: 'Mapfre', label: 'Mapfre' },
+    { value: 'Seguros Sura', label: 'Seguros Sura' },
+    { value: 'Seguros Universal', label: 'Seguros Universal' },
+    { value: 'Seguros Banreservas', label: 'Seguros Banreservas' },
+    { value: 'La Colonial de Seguros', label: 'La Colonial de Seguros' },
+    { value: 'Humano Seguros', label: 'Humano Seguros' },
   ];
 
   // Define color options
   const colorOptions = [
-    { value: 'black', label: 'Negro / Black' },
-    { value: 'white', label: 'Blanco / White' },
-    { value: 'red', label: 'Rojo / Red' },
-    { value: 'blue', label: 'Azul / Blue' },
-    { value: 'green', label: 'Verde / Green' },
-    { value: 'yellow', label: 'Amarillo / Yellow' },
-    { value: 'orange', label: 'Naranja / Orange' },
-    { value: 'purple', label: 'Morado / Purple' },
-    { value: 'gray', label: 'Gris / Gray' },
-    { value: 'silver', label: 'Plateado / Silver' },
+    { value: 'Negro', label: 'Negro / Black' },
+    { value: 'Blanco', label: 'Blanco / White' },
+    { value: 'Rojo', label: 'Rojo / Red' },
+    { value: 'Azul', label: 'Azul / Blue' },
+    { value: 'Verde', label: 'Verde / Green' },
+    { value: 'Amarillo', label: 'Amarillo / Yellow' },
+    { value: 'Naranja', label: 'Naranja / Orange' },
+    { value: 'Morado', label: 'Morado / Purple' },
+    { value: 'Gris', label: 'Gris / Gray' },
+    { value: 'Plateado', label: 'Plateado / Silver' },
   ];
 
   // Handle brand change
-  const handleBrandChange = (value) => {
+  const handleBrandChange = async (value, option) => {
     setSelectedBrand(value);
-    form.setFieldsValue({ model: undefined }); // Reset model when brand changes
+    // Guarda el ID y nombre de la marca
+    form.setFieldsValue({
+      brand: {
+        id: value,
+        nombre: option.children
+      },
+      // Resetea el modelo cuando cambia la marca
+      model: undefined 
+    });
+    await fetchModels(value);
+  };
+
+  // Agrega un handler para el cambio de modelo
+  const handleModelChange = (value, option) => {
+    setSelectedModel(value); // Add this line to track selected model
+    form.setFieldsValue({
+      model: {
+        id: value,
+        nombre: option.children
+      }
+    });
+  };
+
+  // Actualizar el useEffect para que maneje los cambios
+  useEffect(() => {
+    const currentInsurance = form.getFieldValue('hasInsurance');
+    if (currentInsurance !== undefined) {
+      setHasInsurance(currentInsurance);
+    }
+  }, [form]);
+
+  // Actualizar el handler del RadioGroup
+  const handleInsuranceChange = (e) => {
+    const value = e.target.value;
+    setHasInsurance(value);
+    
+    // Si cambia a "no", limpiar los campos de seguro
+    if (value === 'no') {
+      form.setFieldsValue({
+        insuranceProvider: undefined,
+        policyNumber: undefined
+      });
+    }
   };
 
   // Set initial values for the form fields
@@ -320,12 +329,6 @@ const DatosMotocicletas = ({ form }) => {
     // Only set if the field doesn't already have a value
     form.getFieldValue('hasInsurance') === undefined && 
       form.setFieldsValue({ hasInsurance: 'yes' });
-      
-    // Get initial brand value if it exists
-    const initialBrand = form.getFieldValue('brand');
-    if (initialBrand) {
-      setSelectedBrand(initialBrand);
-    }
   }, [form]);
 
   return (
@@ -334,7 +337,7 @@ const DatosMotocicletas = ({ form }) => {
         <Row gutter={[16, 16]}>
           <Col xs={24} md={12}>
             <StyledFormItem 
-              name="brand" 
+              name={["brand", "id"]} 
               label={t.brand}
               rules={[{ required: true, message: t.brandRequired }]}
               theme={theme}
@@ -344,9 +347,9 @@ const DatosMotocicletas = ({ form }) => {
                 placeholder={t.brandPlaceholder}
                 onChange={handleBrandChange}
               >
-                {motorcycleBrands.map(brand => (
-                  <Option key={brand.value} value={brand.value}>
-                    {brand.label}
+                {brands.map(brand => (
+                  <Option key={brand.id} value={brand.id}>
+                    {brand.nombre}
                   </Option>
                 ))}
               </StyledSelect>
@@ -355,19 +358,21 @@ const DatosMotocicletas = ({ form }) => {
           
           <Col xs={24} md={12}>
             <StyledFormItem 
-              name="model" 
+              name={["model", "id"]} 
               label={t.model}
               rules={[{ required: true, message: t.modelRequired }]}
               theme={theme}
             >
-              <StyledSelect 
+              <StyledSelect
                 $isDarkMode={isDarkMode}
                 placeholder={t.modelPlaceholder}
                 disabled={!selectedBrand}
+                onChange={handleModelChange}
+                value={form.getFieldValue(['model', 'id'])}
               >
-                {selectedBrand && modelsByBrand[selectedBrand]?.map(model => (
-                  <Option key={model.value} value={model.value}>
-                    {model.label}
+                {selectedBrand && models?.map(model => (
+                  <Option key={model.id} value={model.id}>
+                    {model.nombre}
                   </Option>
                 ))}
               </StyledSelect>
@@ -418,8 +423,8 @@ const DatosMotocicletas = ({ form }) => {
               theme={theme}
             >
               <StyledInputNumber 
-                min={50} 
-                max={2000} 
+                min={50}
+                max={2000}
                 $isDarkMode={isDarkMode}
                 placeholder="cc"
               />
@@ -434,9 +439,11 @@ const DatosMotocicletas = ({ form }) => {
               theme={theme}
             >
               <StyledSelect $isDarkMode={isDarkMode}>
-                <Option value="personal">{t.personal}</Option>
-                <Option value="commercial">{t.commercial}</Option>
-                <Option value="delivery">{t.delivery}</Option>
+                <Option value="Personal">{t.personal}</Option>
+                <Option value="Empresarial">{t.commercial}</Option>
+                <Option value="Transporte">{t.delivery}</Option>
+                <Option value="Recreativo">{t.recreational}</Option>
+                <Option value="Deportivo">{t.sports}</Option>
               </StyledSelect>
             </StyledFormItem>
           </Col>
@@ -445,7 +452,15 @@ const DatosMotocicletas = ({ form }) => {
             <StyledFormItem 
               name="chassisNumber" 
               label={t.chassisNumber}
-              rules={[{ required: true, message: t.chassisRequired }]}
+              rules={[
+                { required: true, message: t.chassisRequired },
+                { 
+                  len: 17, 
+                  message: language === 'es' 
+                    ? 'El número de chasis debe tener exactamente 17 caracteres'
+                    : 'The chassis number must be exactly 17 characters long'
+                }
+              ]}
               theme={theme}
             >
               <Inputs placeholder={t.chassisPlaceholder} />
@@ -459,9 +474,7 @@ const DatosMotocicletas = ({ form }) => {
               rules={[{ required: true, message: t.insuranceRequired }]}
               theme={theme}
             >
-              <StyledRadioGroup 
-                onChange={(e) => setHasInsurance(e.target.value)}
-              >
+              <StyledRadioGroup onChange={handleInsuranceChange}>
                 <Radio value="yes">{t.yes}</Radio>
                 <Radio value="no">{t.no}</Radio>
               </StyledRadioGroup>
@@ -488,7 +501,7 @@ const DatosMotocicletas = ({ form }) => {
               </Col>
               
               <Col xs={24} md={12}>
-                <StyledFormItem 
+                <StyledFormItem
                   name="policyNumber" 
                   label={t.policyNumber}
                   rules={[{ required: true, message: t.policyRequired }]}

@@ -113,8 +113,7 @@ const FooterInfo = () => {
           />
         </LottieWrapper>
         <ContactInfo>
-          <ContactText>info@mototrack.gob.do</ContactText>
-          <ContactText>soporte@mototrack.gob.do</ContactText>
+          <ContactText>servicio.mototrack@gmail.com</ContactText>
         </ContactInfo>
       </ContactItem>
       

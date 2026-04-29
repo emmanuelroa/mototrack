@@ -245,8 +245,7 @@ const SupportIntroduction = () => {
             </LottieIcon>
             <ContactTitle>Correo Electrónico</ContactTitle>
           </ContactHeader>
-          <ContactInfo variants={infoVariants}>info@mototrack.gob.do</ContactInfo>
-          <ContactInfo variants={infoVariants}>soporte@mototrack.gob.do</ContactInfo>
+          <ContactInfo variants={infoVariants}>servicio.mototrack@gmail.com</ContactInfo>
         </ContactItem>
 
         <ContactItem variants={itemVariants}>

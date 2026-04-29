@@ -11,6 +11,7 @@ const STATUS_TRANSLATIONS = {
     MOTO_RECHAZADA: 'Rejected',
     USUARIO_ACTIVO: 'Active',
     USUARIO_INACTIVO: 'Inactive',
+    USUARIO_DESHABILITADO: 'Disabled',
     UNKNOWN: 'Unknown'
   },
   es: {
@@ -19,6 +20,7 @@ const STATUS_TRANSLATIONS = {
     MOTO_RECHAZADA: 'Rechazada',
     USUARIO_ACTIVO: 'Activo',
     USUARIO_INACTIVO: 'Inactivo',
+    USUARIO_DESHABILITADO: 'Deshabilitado',
     UNKNOWN: 'Desconocido'
   }
 };
@@ -45,6 +47,10 @@ const STATUS_CONFIG = {
     colorDark: '#1AAA4C'
   },
   USUARIO_INACTIVO: {
+    color: '#FA8C16', // Rojo más brillante para ambos modos
+    colorDark: '#E53935'
+  },
+  USUARIO_DESHABILITADO: {
     color: '#E53935', // Rojo más brillante para ambos modos
     colorDark: '#E53935'
   }
@@ -147,6 +153,7 @@ export const MOTO_STATUS = {
 
 export const USUARIO_STATUS = {
   ACTIVO: 'USUARIO_ACTIVO',
+  DESHABILITADO: 'USUARIO_DESHABILITADO',
   INACTIVO: 'USUARIO_INACTIVO'
 };
 

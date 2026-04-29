@@ -1,11 +1,14 @@
 import React from 'react';
-import { Form, Radio, DatePicker, Select, Row, Col } from 'antd';
+import { Form, Radio, DatePicker, Select, Row, Col, notification } from 'antd';
 import styled from 'styled-components';
 import Inputs from '../../CommonComponts/Inputs';
 import { useTheme } from '../../../../context/ThemeContext';
 import { useLanguage } from '../../../../context/LanguageContext';
-
+import axios from 'axios';
+import { useAuth } from '../../../../context/AuthContext';
+import { useEffect, useState } from 'react';
 const { Option } = Select;
+import moment from 'moment';
 
 const FormContainer = styled.div`
   margin-top: 20px;
@@ -134,7 +137,13 @@ const DatosPersonales = ({ form }) => {
   const { theme, currentTheme } = useTheme();
   const { language } = useLanguage();
   const isDarkMode = currentTheme === 'themeDark';
-  
+  const api_url = import.meta.env.VITE_API_URL;
+  const { getAccessToken } = useAuth();
+  const [initialPersonalData, setInitialPersonalData] = useState([]);
+  const [provincias, setProvincias] = useState([]);
+  const [municipios, setMunicipios] = useState([]);
+  const [selectedProvincia, setSelectedProvincia] = useState(null);
+
   const translations = {
     es: {
       fullName: 'Nombre Completo',
@@ -167,7 +176,13 @@ const DatosPersonales = ({ form }) => {
       addressRequired: 'Por favor ingrese su dirección',
       sector: 'Sector',
       sectorPlaceholder: 'Seleccione su sector',
-      sectorRequired: 'Por favor seleccione su sector'
+      sectorRequired: 'Por favor seleccione su sector',
+      province: 'Provincia',
+      provincePlaceholder: 'Seleccione su provincia',
+      provinceRequired: 'Por favor seleccione su provincia',
+      municipality: 'Municipio',
+      municipalityPlaceholder: 'Seleccione su municipio',
+      municipalityRequired: 'Por favor seleccione su municipio'
     },
     en: {
       fullName: 'Full Name',
@@ -200,48 +215,284 @@ const DatosPersonales = ({ form }) => {
       addressRequired: 'Please enter your address',
       sector: 'Sector',
       sectorPlaceholder: 'Select your sector',
-      sectorRequired: 'Please select your sector'
+      sectorRequired: 'Please select your sector',
+      province: 'Province',
+      provincePlaceholder: 'Select your province',
+      provinceRequired: 'Please select your province',
+      municipality: 'Municipality',
+      municipalityPlaceholder: 'Select your municipality',
+      municipalityRequired: 'Please select your municipality'
     }
   };
   
+  const getPersonalData = async () => {
+    try {
+      const personalData = await axios.get(`${api_url}/api/profileToken`, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+      });
+      setInitialPersonalData(personalData.data.data);
+    } catch (error) {
+      console.error('Error fetching personal data:', error);
+      notification.error({
+        message: language === 'es' ? 'Error' : 'Error',
+        description: language === 'es' ? 'No se pudo obtener los datos personales.' : 'Could not fetch personal data.',
+        placement: 'topRight',
+        duration: 3,
+      });      
+    }
+  }
+
+  const fetchProvincias = async () => {
+    try {
+      const response = await axios.get(`${api_url}/api/provincia`, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+      });
+      if (response.data.success) {
+        setProvincias(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching provincias:', error);
+      notification.error({
+        message: language === 'es' ? 'Error' : 'Error',
+        description: language === 'es' 
+          ? 'Error al cargar las provincias' 
+          : 'Error loading provinces',
+      });
+    }
+  };
+
+  const fetchMunicipios = async (provinciaId) => {
+    try {
+      const response = await axios.get(`${api_url}/api/municipio?idProvincia=${provinciaId}`, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+      });
+      if (response.data.success) {
+        setMunicipios(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching municipios:', error);
+      notification.error({
+        message: language === 'es' ? 'Error' : 'Error',
+        description: language === 'es' 
+          ? 'Error al cargar los municipios' 
+          : 'Error loading municipalities',
+      });
+    }
+  };
+
+  useEffect(() => {
+    getPersonalData();
+    fetchProvincias();
+  }, []);
+
+  const formatCedula = (cedula) => {
+    if (!cedula) return undefined;
+    // Remove any non-digit characters
+    const cleaned = cedula.replace(/\D/g, '');
+    // Check if we have the correct length
+    if (cleaned.length !== 11) return cedula;
+    // Format with dashes
+    return `${cleaned.substring(0, 3)}-${cleaned.substring(3, 10)}-${cleaned.substring(10)}`;
+  };
+
+  // Helper function to format phone number
+  const formatPhone = (phone) => {
+    if (!phone) return undefined;
+    // Remove any non-digit characters
+    const cleaned = phone.replace(/\D/g, '');
+    // Check if we have the correct length
+    if (cleaned.length !== 10) return phone;
+    // Format with dashes
+    return `${cleaned.substring(0, 3)}-${cleaned.substring(3, 6)}-${cleaned.substring(6)}`;
+  };
+
+  console.log('Initial Personal Data:', initialPersonalData);
+  useEffect(() => {
+    if (initialPersonalData?.datosPersonales?.ubicacion) {
+      const { ubicacion } = initialPersonalData.datosPersonales;
+      const formValues = {};
+      
+      // Nombres
+      if (initialPersonalData.nombres) {
+        formValues.firstName = initialPersonalData.nombres;
+      }
+  
+      // Apellidos
+      if (initialPersonalData.apellidos) {
+        formValues.lastName = initialPersonalData.apellidos;
+      }
+  
+      // Género
+      if (initialPersonalData.datosPersonales.sexo) {
+        formValues.gender = initialPersonalData.datosPersonales.sexo.toLowerCase() === 'm' ? 'male' : 'female';
+      }
+  
+      // Cédula
+      if (initialPersonalData.datosPersonales.cedula) {
+        formValues.idDocument = formatCedula(initialPersonalData.datosPersonales.cedula);
+      }
+  
+      // Teléfono
+      if (initialPersonalData.datosPersonales.telefono) {
+        formValues.phone = formatPhone(initialPersonalData.datosPersonales.telefono);
+      }
+  
+      // Estado Civil
+      if (initialPersonalData.datosPersonales.estadoCivil) {
+        formValues.maritalStatus = initialPersonalData.datosPersonales.estadoCivil.toLowerCase();
+      }
+  
+      // Fecha de Nacimiento
+      if (initialPersonalData.datosPersonales.fechaNacimiento) {
+        formValues.birthDate = moment(initialPersonalData.datosPersonales.fechaNacimiento);
+      }
+  
+      // Correo
+      if (initialPersonalData.correo) {
+        formValues.email = initialPersonalData.correo;
+      }
+  
+      // Dirección
+      if (initialPersonalData.datosPersonales.ubicacion?.direccion) {
+        formValues.address = initialPersonalData.datosPersonales.ubicacion.direccion;
+      }
+  
+      // Provincia
+      if (initialPersonalData.datosPersonales.ubicacion?.provincia?.id && initialPersonalData.datosPersonales.ubicacion?.provincia?.nombre) {
+        formValues.provincia = {
+          id: initialPersonalData.datosPersonales.ubicacion.provincia.id,
+          nombre: initialPersonalData.datosPersonales.ubicacion.provincia.nombre
+        };
+      }
+  
+      // Municipio
+      if (initialPersonalData.datosPersonales.ubicacion?.municipio?.id && initialPersonalData.datosPersonales.ubicacion?.municipio?.nombre) {
+        formValues.municipio = {
+          id: initialPersonalData.datosPersonales.ubicacion.municipio.id,
+          nombre: initialPersonalData.datosPersonales.ubicacion.municipio.nombre
+        };
+      }
+  
+      // Handle provincia and municipio
+      if (ubicacion.provincia?.id) {
+        // Set provincia
+        formValues.provincia = {
+          id: ubicacion.provincia.id,
+          nombre: ubicacion.provincia.nombreProvincia
+        };
+        
+        // Set selectedProvincia and fetch municipios
+        setSelectedProvincia(ubicacion.provincia.id);
+        fetchMunicipios(ubicacion.provincia.id).then(() => {
+          // Set municipio after municipios are fetched
+          if (ubicacion.municipio?.id) {
+            formValues.municipio = {
+              id: ubicacion.municipio.id,
+              nombre: ubicacion.municipio.nombreMunicipio
+            };
+            form.setFieldsValue(formValues);
+          }
+        });
+      }
+  
+      // Set all other form values
+      form.setFieldsValue(formValues);
+    }
+  }, [initialPersonalData, form]);
+
   const t = translations[language] || translations.es;
 
-  // Common sectors in Dominican Republic
-  const sectors = [
-    "Los Frailes", 
-    "San Luis", 
-    "La Caleta", 
-    "Arroyo Hondo", 
-    "Bella Vista", 
-    "Ciudad Nueva", 
-    "Evaristo Morales", 
-    "Gazcue", 
-    "La Esperilla", 
-    "Los Jardines", 
-    "Los Prados", 
-    "Naco", 
-    "Paraíso", 
-    "Piantini", 
-    "Villa Juana", 
-    "Zona Colonial",
-    "Los Mina",
-    "Villa Consuelo",
-    "Cristo Rey",
-    "Los Ríos"
-  ];
+  // Add these validation functions at the top of your component
+  const validateCedula = (_, value) => {
+    if (!value) {
+      return Promise.reject(new Error('Por favor ingrese su cédula'));
+    }
+    
+    // Remove any non-digit characters for validation
+    const cleaned = value.replace(/\D/g, '');
+    
+    // Check if it has exactly 11 digits
+    if (cleaned.length !== 11) {
+      return Promise.reject(new Error('La cédula debe tener 11 dígitos'));
+    }
+    
+    // Check if it matches the format XXX-XXXXXXX-X
+    const cedulaRegex = /^\d{3}-\d{7}-\d{1}$/;
+    if (!cedulaRegex.test(value)) {
+      return Promise.reject(new Error('Formato inválido. Use: XXX-XXXXXXX-X'));
+    }
+  
+    return Promise.resolve();
+  };
+  
+  const validatePhone = (_, value) => {
+    if (!value) {
+      return Promise.reject(new Error('Por favor ingrese su teléfono'));
+    }
+    
+    // Remove any non-digit characters for validation
+    const cleaned = value.replace(/\D/g, '');
+    
+    // Check if it has exactly 10 digits
+    if (cleaned.length !== 10) {
+      return Promise.reject(new Error('El teléfono debe tener 10 dígitos'));
+    }
+    
+    // Check if it matches the format XXX-XXX-XXXX
+    const phoneRegex = /^\d{3}-\d{3}-\d{4}$/;
+    if (!phoneRegex.test(value)) {
+      return Promise.reject(new Error('Formato inválido. Use: XXX-XXX-XXXX'));
+    }
+  
+    return Promise.resolve();
+  };
+
+  const handleProvinciaChange = async (value) => {
+    setSelectedProvincia(value);
+    form.setFieldsValue({ municipio: undefined }); // Clear municipio when provincia changes
+    await fetchMunicipios(value);
+  };
 
   return (
     <FormContainer>
       <Form form={form} layout="vertical" requiredMark={false}>
         <Row gutter={[16, 16]}>
           <Col xs={24} md={12}>
-            <StyledFormItem 
-              name="fullName" 
-              label={t.fullName}
-              rules={[{ required: true, message: t.fullNameRequired }]}
+            <StyledFormItem
+              name="firstName" 
+              label={language === 'es' ? 'Nombres' : 'First Names'}
+              rules={[
+                { required: true, message: language === 'es' ? 'Por favor ingrese sus nombres' : 'Please enter your first names' },
+                { pattern: /^[A-Za-zÁáÉéÍíÓóÚúÑñ\s]+$/, 
+                  message: language === 'es' ? 'Solo se permiten letras' : 'Only letters are allowed' }
+              ]}
               theme={theme}
             >
-              <Inputs placeholder={t.fullNamePlaceholder} />
+              <Inputs
+                placeholder={language === 'es' ? 'Ingrese sus nombres' : 'Enter your first names'} 
+                initialValue={initialPersonalData?.nombres}
+              />
+            </StyledFormItem>
+          </Col>
+
+          <Col xs={24} md={12}>
+            <StyledFormItem
+              name="lastName" 
+              label={language === 'es' ? 'Apellidos' : 'Last Names'}
+              rules={[
+                { required: true, message: language === 'es' ? 'Por favor ingrese sus apellidos' : 'Please enter your last names' },
+                { pattern: /^[A-Za-zÁáÉéÍíÓóÚúÑñ\s]+$/, 
+                  message: language === 'es' ? 'Solo se permiten letras' : 'Only letters are allowed' }
+              ]}
+              theme={theme}
+            >
+              <Inputs placeholder={language === 'es' ? 'Ingrese sus apellidos' : 'Enter your last names'} />
             </StyledFormItem>
           </Col>
           
@@ -259,14 +510,24 @@ const DatosPersonales = ({ form }) => {
             </StyledFormItem>
           </Col>
           
+          {/* Rest of the form remains the same */}
           <Col xs={24} md={12}>
             <StyledFormItem 
               name="idDocument" 
               label={t.idDocument}
-              rules={[{ required: true, message: t.idRequired }]}
+              rules={[
+                { required: true, message: t.idRequired },
+                { validator: validateCedula }
+              ]}
               theme={theme}
             >
-              <Inputs placeholder={t.idPlaceholder} />
+              <Inputs 
+                placeholder={t.idPlaceholder}
+                onChange={(e) => {
+                  const formatted = formatCedula(e.target.value);
+                  form.setFieldsValue({ idDocument: formatted });
+                }}
+              />
             </StyledFormItem>
           </Col>
           
@@ -274,10 +535,19 @@ const DatosPersonales = ({ form }) => {
             <StyledFormItem 
               name="phone" 
               label={t.phone}
-              rules={[{ required: true, message: t.phoneRequired }]}
+              rules={[
+                { required: true, message: t.phoneRequired },
+                { validator: validatePhone }
+              ]}
               theme={theme}
             >
-              <Inputs placeholder={t.phonePlaceholder} />
+              <Inputs 
+                placeholder={t.phonePlaceholder}
+                onChange={(e) => {
+                  const formatted = formatPhone(e.target.value);
+                  form.setFieldsValue({ phone: formatted });
+                }}
+              />
             </StyledFormItem>
           </Col>
           
@@ -289,10 +559,10 @@ const DatosPersonales = ({ form }) => {
               theme={theme}
             >
               <StyledSelect $isDarkMode={isDarkMode}>
-                <Option value="single">{t.single}</Option>
-                <Option value="married">{t.married}</Option>
-                <Option value="divorced">{t.divorced}</Option>
-                <Option value="widowed">{t.widowed}</Option>
+                <Option value="soltero">{t.single}</Option>
+                <Option value="casado">{t.married}</Option>
+                <Option value="divorciado">{t.divorced}</Option>
+                <Option value="viudo ">{t.widowed}</Option>
               </StyledSelect>
             </StyledFormItem>
           </Col>
@@ -325,21 +595,6 @@ const DatosPersonales = ({ form }) => {
             </StyledFormItem>
           </Col>
           
-          <Col xs={24} md={12}>
-            <StyledFormItem 
-              name="sector" 
-              label={t.sector}
-              rules={[{ required: true, message: t.sectorRequired }]}
-              theme={theme}
-            >
-              <StyledSelect $isDarkMode={isDarkMode} placeholder={t.sectorPlaceholder}>
-                {sectors.map(sector => (
-                  <Option key={sector} value={sector}>{sector}</Option>
-                ))}
-              </StyledSelect>
-            </StyledFormItem>
-          </Col>
-          
           <Col span={24}>
             <StyledFormItem 
               name="address" 
@@ -348,6 +603,48 @@ const DatosPersonales = ({ form }) => {
               theme={theme}
             >
               <Inputs placeholder={t.addressPlaceholder} />
+            </StyledFormItem>
+          </Col>
+
+          <Col xs={24} md={12}>
+            <StyledFormItem
+              name={["provincia", "id"]}
+              label={t.province}
+              rules={[{ required: true, message: t.provinceRequired }]}
+              theme={theme}
+            >
+              <StyledSelect
+                $isDarkMode={isDarkMode}
+                placeholder={t.provincePlaceholder}
+                onChange={handleProvinciaChange}
+              >
+                {provincias.map(provincia => (
+                  <Option key={provincia.id} value={provincia.id}>
+                    {provincia.nombreProvincia}
+                  </Option>
+                ))}
+              </StyledSelect>
+            </StyledFormItem>
+          </Col>
+
+          <Col xs={24} md={12}>
+            <StyledFormItem
+              name={["municipio", "id"]}
+              label={t.municipality}
+              rules={[{ required: true, message: t.municipalityRequired }]}
+              theme={theme}
+            >
+              <StyledSelect
+                $isDarkMode={isDarkMode}
+                placeholder={t.municipalityPlaceholder}
+                disabled={!selectedProvincia}
+              >
+                {municipios.map(municipio => (
+                  <Option key={municipio.id} value={municipio.id}>
+                    {municipio.nombreMunicipio}
+                  </Option>
+                ))}
+              </StyledSelect>
             </StyledFormItem>
           </Col>
         </Row>

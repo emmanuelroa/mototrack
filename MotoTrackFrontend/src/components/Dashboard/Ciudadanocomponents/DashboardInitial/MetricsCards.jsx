@@ -1,17 +1,55 @@
 import React from 'react';
-import { Row, Col } from 'antd';
+import { Row, Col, Spin } from 'antd';
 import { CarOutlined, ProfileOutlined, CheckCircleOutlined, IdcardOutlined } from '@ant-design/icons';
 import MetricCard from '../../CommonComponts/MetricCard';
 import styled from 'styled-components';
 import { useLanguage } from '../../../../context/LanguageContext';
+import {useAuth} from '../../../../context/AuthContext';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useNotification } from '../../CommonComponts/ToastNotifications';
 
 const MetricsContainer = styled.div`
   margin-bottom: 24px;
 `;
 
-function MetricsCards() {
+const MetricsCards = ({ refreshTrigger }) => {
   const { language } = useLanguage();
-  
+  const [metrics, setMetrics] = useState({
+    active: 0,
+    pending: 0,
+    rejected: 0
+  });
+  const api_url = import.meta.env.VITE_API_URL;
+  const { getAccessToken } = useAuth();
+  const notification = useNotification();
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const response = await axios.get(`${api_url}/api/statistics/ciudadano`, {
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+        });
+        setMetrics(response.data.data);
+      } catch (error) {
+        console.error('Error fetching metrics:', error);
+        notification.error({
+          message: 'Error',
+          description: 'Error al cargar los datos de las métricas.',
+        });
+        
+        setMetrics({
+          motocicletas: { activas: 0 },
+          solicitudes: { pendientes: 0, aprobadas: 0, total: 0 },
+        });
+      }
+    };
+
+    fetchMetrics();
+  }, [refreshTrigger]); // Add refreshTrigger as dependency
+
   const translations = {
     es: {
       totalMotorcycles: {
@@ -53,42 +91,53 @@ function MetricsCards() {
 
   const t = translations[language] || translations.es;
 
+  // Import Spin from antd at the top of your file if not already imported
+
+  // Add a loading state check
+  if (!metrics || Object.keys(metrics).length === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '20px' }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
   const metricsData = [
     {
       id: 1,
       title: t.totalMotorcycles.title,
       icon: <CarOutlined />,
-      value: 2,
+      value: metrics?.motocicletas?.activas || 0,
       subtitle: t.totalMotorcycles.subtitle,
-      bubbleColor: '#e6f7ff',  // Azul claro para el fondo
-      iconColor: '#1890ff'     // Azul para el icono
+      bubbleColor: '#e6f7ff',
+      iconColor: '#1890ff'
     },
     {
       id: 2,
       title: t.pending.title,
       icon: <ProfileOutlined />,
-      value: 1,
+      value: metrics?.solicitudes?.pendientes || 0,
       subtitle: t.pending.subtitle,
-      bubbleColor: '#fff7e6',  // Naranja claro para el fondo
-      iconColor: '#fa8c16'     // Naranja para el icono
+      bubbleColor: '#fff7e6',
+      iconColor: '#fa8c16'
     },
     {
       id: 3,
       title: t.approved.title,
       icon: <CheckCircleOutlined />,
-      value: 2,
+      value: metrics?.solicitudes?.aprobadas || 0,
       subtitle: t.approved.subtitle,
-      bubbleColor: '#f6ffed',  // Verde claro para el fondo
-      iconColor: '#52c41a'     // Verde para el icono
+      bubbleColor: '#f6ffed',
+      iconColor: '#52c41a'
     },
     {
       id: 4,
       title: t.documents.title,
       icon: <IdcardOutlined />,
-      value: 2,
+      value: metrics?.solicitudes?.total || 0,
       subtitle: t.documents.subtitle,
-      bubbleColor: '#f9f0ff',  // Morado claro para el fondo
-      iconColor: '#722ed1'     // Morado para el icono
+      bubbleColor: '#f9f0ff',
+      iconColor: '#722ed1'
     }
   ];
 

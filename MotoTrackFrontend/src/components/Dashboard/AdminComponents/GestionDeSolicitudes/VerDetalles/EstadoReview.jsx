@@ -234,14 +234,8 @@ const EstadoReview = ({
       const values = await form.validateFields();
       setLoading(true);
       
-      console.log("Formulario validado correctamente", {
-        ...values,
-        status: selectedStatus
-      });
-      
       switch (selectedStatus) {
         case REGISTRO_STATUS.APROBADO:
-          console.log("Procesando aprobación...");
           
           notification.success(
             language === 'en' ? 'Registration Approved' : 'Registro Aprobado',
@@ -259,7 +253,6 @@ const EstadoReview = ({
           break;
           
         case REGISTRO_STATUS.RECHAZADO:
-          console.log("Procesando rechazo...");
           
           const motivoTexto = getMotivoRechazoTexto(values.rejectionReason);
           const comentarioCompleto = `${motivoTexto}: ${values.comments}`;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Row, Col } from 'antd';
+import { Row, Col, notification } from 'antd';
 import { 
   TeamOutlined, 
   CrownOutlined, 
@@ -14,9 +14,8 @@ const MetricsContainer = styled.div`
   margin-bottom: 24px;
 `;
 
-function EmpleadosMetricsCards() {
+function EmpleadosMetricsCards({ data }) {
   const { language } = useLanguage();
-  
   const translations = {
     es: {
       totalEmpleados: {
@@ -63,7 +62,7 @@ function EmpleadosMetricsCards() {
       id: 1,
       title: t.totalEmpleados.title,
       icon: <TeamOutlined />,
-      value: '24',
+      value: data?.usuarios?.empleados?.total,
       subtitle: t.totalEmpleados.subtitle,
       bubbleColor: '#e6f7ff',  // Light blue background
       iconColor: '#1890ff'     // Blue icon
@@ -72,7 +71,7 @@ function EmpleadosMetricsCards() {
       id: 2,
       title: t.administradores.title,
       icon: <CrownOutlined />,
-      value: '6',
+      value: data?.usuarios?.administradores,
       subtitle: t.administradores.subtitle,
       bubbleColor: '#fff7e6',  // Light orange background
       iconColor: '#fa8c16'     // Orange icon
@@ -81,7 +80,7 @@ function EmpleadosMetricsCards() {
       id: 3,
       title: t.nuevosEmpleados.title,
       icon: <UserAddOutlined />,
-      value: '3',
+      value: data?.usuarios?.empleados?.nuevosEsteMes,
       subtitle: t.nuevosEmpleados.subtitle,
       bubbleColor: '#f6ffed',  // Light green background
       iconColor: '#52c41a'     // Green icon
@@ -90,7 +89,7 @@ function EmpleadosMetricsCards() {
       id: 4,
       title: t.empleadosActivos.title,
       icon: <UserSwitchOutlined />,
-      value: '18',
+      value: data?.usuarios?.empleados?.activos,
       subtitle: t.empleadosActivos.subtitle,
       bubbleColor: '#f9f0ff',  // Light purple background
       iconColor: '#722ed1'     // Purple icon

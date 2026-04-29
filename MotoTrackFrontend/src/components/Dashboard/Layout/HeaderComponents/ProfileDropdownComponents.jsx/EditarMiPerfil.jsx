@@ -6,11 +6,13 @@ import SecondaryButton from '../../../CommonComponts/SecondaryButton';
 import { useNotification } from '../../../CommonComponts/ToastNotifications';
 import styled from 'styled-components';
 import { Typography, Form, Spin, Upload, message } from 'antd';
-import { LoadingOutlined, PlusOutlined } from '@ant-design/icons';
+import { LoadingOutlined, PlusOutlined, UserOutlined } from '@ant-design/icons';
 import { useTheme } from '../../../../../context/ThemeContext';
 import { useAuth } from '../../../../../context/AuthContext';
 import { useLanguage } from '../../../../../context/LanguageContext';
 import { profileEditTranslations } from '../../../../../utils/Modals/EditarMiPerfil';
+import axios from 'axios';
+import ReactDom from 'react-dom';
 
 const { Title } = Typography;
 
@@ -129,25 +131,26 @@ const EditarMiPerfil = ({ show, onClose }) => {
   const [form] = Form.useForm();
   const { theme } = useTheme();
   const { language } = useLanguage();
-  const { currentUser } = useAuth();
+  const { currentUser, getAccessToken, fetchUser } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const notification = useNotification();
   const translations = profileEditTranslations[language];
   const [imageUrl, setImageUrl] = useState('');
   const [loading, setLoading] = useState(false);
-  
+  const apiUrl = import.meta.env.VITE_API_URL;
+
   // Reset and populate form when modal opens
   useEffect(() => {
     if (show && currentUser) {
       form.setFieldsValue({
-        firstName: currentUser?.firstName || '',
-        lastName: currentUser?.lastName || '',
-        email: currentUser?.email || ''
+        firstName: currentUser?.nombres || '',
+        lastName: currentUser?.apellidos || '',
+        email: currentUser?.correo || ''
       });
       
       // Set profile image if exists
-      if (currentUser?.profileImage) {
-        setImageUrl(currentUser.profileImage);
+      if (currentUser?.ftPerfil) {
+        setImageUrl(currentUser.ftPerfil);
       } else {
         setImageUrl('');
       }
@@ -163,72 +166,143 @@ const EditarMiPerfil = ({ show, onClose }) => {
   
   // Validate file before upload
   const beforeUpload = (file) => {
-    const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
-    if (!isJpgOrPng) {
-      message.error(translations.photoUpload?.typeError || 'Solo puedes subir imágenes JPG o PNG');
+    const isValidType = 
+      file.type === 'image/jpeg' || 
+      file.type === 'image/png' || 
+      file.type === 'application/pdf'; // Permitir PDF
+  
+    if (!isValidType) {
+      message.error(
+        translations.photoUpload?.typeError || 
+        'Solo puedes subir imágenes JPG, PNG o archivos PDF'
+      );
       return false;
     }
-    const isLt2M = file.size / 1024 / 1024 < 2;
-    if (!isLt2M) {
-      message.error(translations.photoUpload?.sizeError || 'La imagen debe ser menor a 2MB');
+  
+    const isLt8M = file.size / 1024 / 1024 < 8; // Tamaño máximo de 8MB
+    if (!isLt8M) {
+      message.error(
+        translations.photoUpload?.sizeError || 
+        'El archivo debe ser menor a 8MB'
+      );
       return false;
     }
+  
     return true;
   };
   
   // Handle image change
   const handleImageChange = (info) => {
-    if (info.file.status === 'uploading') {
-      setLoading(true);
-      return;
-    }
-    
+    console.log(info);
+
+    // Verifica si el estado del archivo es "done"
     if (info.file.status === 'done') {
-      // In a real app, you would use the response URL
-      // Here we're using FileReader for demo purposes
-      getBase64(info.file.originFileObj, (url) => {
-        setLoading(false);
-        setImageUrl(url);
-        // Add profile image to form values
-        form.setFieldsValue({
-          ...form.getFieldsValue(),
-          profileImage: url
+      setLoading(true);
+      const formData = new FormData();
+      formData.append('file', info.file.originFileObj);
+      formData.append('fileType', 'perfil');
+
+      axios.post(`${apiUrl}/api/profilePicture`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+      })
+        .then((response) => {
+          if (response?.data?.success) {
+            const url = response.data.data.url; // Extract the URL from the response
+            setImageUrl(url);
+            notification.success(
+              translations.photoUpload?.successTitle || 'Éxito',
+              translations.photoUpload?.successMessage || 'Imagen subida correctamente'
+            );
+          } else {
+            notification.error(
+              translations.photoUpload?.errorTitle || 'Error',
+              translations.photoUpload?.errorMessage || 'Error al subir la imagen'
+            );
+          }
+        })
+        .catch((error) => {
+          notification.error(
+            translations.photoUpload?.errorTitle || 'Error',
+            error.message || translations.photoUpload?.errorMessage || 'No se pudo subir la imagen'
+          );
+        })
+        .finally(() => {
+          setLoading(false);
         });
-      });
-    } else if (info.file.status === 'error') {
-      setLoading(false);
-      message.error(translations.photoUpload?.uploadError || 'Error al subir la imagen');
     }
   };
   
   const handleFinish = async (values) => {
     setIsSubmitting(true);
-    
-    // Include the image URL in the form submission
-    const updatedValues = {
-      ...values,
-      profileImage: imageUrl
-    };
-    
-    // Simulate API call with a delay
-    setTimeout(() => {
-      notification.success(
-        translations.success.title,
-        translations.success.description
-      );
+
+    // Check which fields have been modified
+    const modifiedFields = {};
+    if (values.firstName !== (currentUser?.nombres || '')) {
+      modifiedFields.nombres = values.firstName;
+    }
+    if (values.lastName !== (currentUser?.apellidos || '')) {
+      modifiedFields.apellidos = values.lastName;
+    }
+    if (values.email !== (currentUser?.correo || '')) {
+      modifiedFields.correo = values.email;
+    }
+    if (imageUrl !== (currentUser?.ftPerfil || '')) {
+      modifiedFields.ftPerfil = imageUrl;
+    }
+
+    // If no fields were modified, close the modal
+    if (Object.keys(modifiedFields).length === 0) {
       onClose();
       setIsSubmitting(false);
-    }, 1000);
+      return;
+    }
+
+    try {
+      const response = await axios.put(
+        `${apiUrl}/api/profile`,
+        modifiedFields,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+        }
+      );
+
+      if (response?.data?.success === false) {
+        throw new Error(translations.error.description || 'Error al actualizar el perfil');
+      }
+    
+      const updatedUser = response?.data?.data;
+      
+      notification.success(
+        translations.success.title,
+        translations.success.response?.data?.message || translations.success.description
+      );
+
+      await fetchUser(); // Refresh user data
+      onClose();
+    } catch (error) {
+      notification.error(
+        translations.error.title || 'Error',
+        error.message || translations.error.description
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   const handleCancel = () => {
     // Check if form has been modified before closing
     const formValues = form.getFieldsValue();
     const isModified = 
-      formValues.firstName !== (currentUser?.firstName || '') ||
-      formValues.lastName !== (currentUser?.lastName || '') ||
-      formValues.email !== (currentUser?.email || '') ||
-      imageUrl !== (currentUser?.profileImage || '');
+      formValues.nombres !== (currentUser?.nombres || '') ||
+      formValues.apellidos !== (currentUser?.apellidos || '') ||
+      formValues.correo !== (currentUser?.correo || '') ||
+      imageUrl !== (currentUser?.ftPerfil || '');
       
     if (isModified) {
       if (window.confirm(translations.confirmCancel)) {
@@ -242,12 +316,24 @@ const EditarMiPerfil = ({ show, onClose }) => {
   // Upload button content
   const uploadButton = (
     <>
-      {loading ? <LoadingOutlined /> : 
-        <AvatarInitials theme={theme}>
-          {currentUser?.firstName?.charAt(0) || ''}
-          {currentUser?.lastName?.charAt(0) || ''}
-        </AvatarInitials>
-      }
+      {loading ? (
+        <LoadingOutlined />
+      ) : (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          width: '100%',
+          height: '100%'
+        }}>
+          <UserOutlined 
+            style={{ 
+              fontSize: '32px',
+              color: theme.token.colorTextSecondary
+            }} 
+          />
+        </div>
+      )}
     </>
   );
   
@@ -291,12 +377,54 @@ const EditarMiPerfil = ({ show, onClose }) => {
                   listType="picture-circle"
                   className="avatar-uploader"
                   showUploadList={false}
-                  action="https://run.mocky.io/v3/435e224c-44fb-4773-9faf-380c5e6a2188"
                   beforeUpload={beforeUpload}
-                  onChange={handleImageChange}
-                  accept=".jpg,.jpeg,.png"
+                  customRequest={async (options) => {
+                    const { file, onSuccess, onError } = options;
+                
+                    try {
+                      setLoading(true); // Activar el spinner
+                      const formData = new FormData();
+                      formData.append('file', file);
+                      formData.append('fileType', 'perfil');
+                
+                      const response = await axios.post(`${apiUrl}/api/profilePicture`, formData, {
+                        headers: {
+                          'Content-Type': 'multipart/form-data',
+                          Authorization: `Bearer ${getAccessToken()}`, // Agregar el token aquí
+                        },
+                      });
+                
+                      if (response?.data?.success) {
+                        const url = response.data.data.url; // Extraer la URL de la respuesta
+                        setImageUrl(url);
+                        notification.success(
+                          translations.photoUpload?.successTitle || 'Éxito',
+                          translations.photoUpload?.successMessage || 'Imagen subida correctamente'
+                        );
+                        await fetchUser(); // Actualizar el usuario después de subir la imagen
+                        onSuccess(response.data);
+                      } else {
+                        notification.error(
+                          translations.photoUpload?.errorTitle || 'Error',
+                          translations.photoUpload?.errorMessage || 'Error al subir la imagen'
+                        );
+                        onError(new Error('Error al subir la imagen'));
+                      }
+                    } catch (error) {
+                      notification.error(
+                        translations.photoUpload?.errorTitle || 'Error',
+                        error.message || translations.photoUpload?.errorMessage || 'No se pudo subir la imagen'
+                      );
+                      onError(error);
+                    } finally {
+                      setLoading(false); // Desactivar el spinner
+                    }
+                  }}
+                  accept=".jpg,.jpeg,.png,.pdf"
                 >
-                  {imageUrl ? (
+                  {loading ? (
+                    <Spin size="large" /> // Mostrar spinner mientras se sube la imagen
+                  ) : imageUrl ? (
                     <img 
                       src={imageUrl} 
                       alt="avatar" 
@@ -307,7 +435,9 @@ const EditarMiPerfil = ({ show, onClose }) => {
                         borderRadius: '50%' 
                       }} 
                     />
-                  ) : uploadButton}
+                  ) : (
+                    uploadButton
+                  )}
                 </Upload>
               </Form.Item>
               <div className="avatar-text">

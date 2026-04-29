@@ -50,12 +50,12 @@ export const mockMotocicletas = {
 // Helper function to find motorcycle by ID
 export const findMotoById = (id) => {
   const numId = Number(id);
-  
+
   for (const category of ['activas', 'pendientes', 'rechazadas']) {
     const found = mockMotocicletas[category].find(moto => moto.id === numId);
     if (found) return found;
   }
-  
+
   return null;
 };
 

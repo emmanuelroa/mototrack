@@ -246,19 +246,27 @@ const DetallePendiente = ({ data = {} }) => {
   // Get the current status from the first historial item if available
   const currentStatus = data.pendienteDetalles?.historial?.[0]?.estado || t.inReview;
   const currentStatusText = getLocalizedStatus(currentStatus, t);
-  
+
   // Prepare data for display
   const pendingData = {
     fechaSolicitud: formatDate(data.fechaSolicitud || new Date().toISOString(), language === 'en' ? 'en-US' : 'es-DO'),
     estadoActual: currentStatusText,
     tiempoEstimado: '5-7 días hábiles',
     observaciones: 'Su solicitud está siendo procesada. Recibirá una notificación cuando haya cambios en el estado.',
-    historial: data.pendienteDetalles?.historial?.map(item => ({
-      fecha: formatDate(item.fecha || new Date().toISOString(), language === 'en' ? 'en-US' : 'es-DO'),
-      estado: getLocalizedStatus(item.estado, t),
-      descripcion: item.descripcion || '',
-      usuario: item.responsable || 'Sistema'
-    })) || []
+    historial: [
+      {
+        estado: 'In Review',
+        fecha: formatDate(data?.solicitud?.fechaProcesada) || 'Sin fecha',
+        responsable: `Lic. ${data?.empleado?.nombres || 'No asignado'}  ${data?.empleado?.apellidos || 'No asignado'}`,
+        descripcion: "Solicitud en revisión por el departamento de registro.",
+      },
+      {
+        estado: 'Received',
+        fecha: formatDate(data?.solicitud?.fechaRegistro) || 'Sin fecha',
+        responsable: "Sistema",
+        descripcion: "Solicitud recibida y en espera de aprobación.",
+      }
+    ]
   };
 
   return (
@@ -324,7 +332,7 @@ const DetallePendiente = ({ data = {} }) => {
               children: (
                 <TimelineItemContent theme={theme}>
                   <TimelineItemTitle>{item.estado}</TimelineItemTitle>
-                  <TimelineItemDate theme={theme}>{item.fecha} - {item.usuario}</TimelineItemDate>
+                  <TimelineItemDate theme={theme}>{item.fecha} - {item.responsable}</TimelineItemDate>
                   <TimelineItemDescription>{item.descripcion}</TimelineItemDescription>
                 </TimelineItemContent>
               )

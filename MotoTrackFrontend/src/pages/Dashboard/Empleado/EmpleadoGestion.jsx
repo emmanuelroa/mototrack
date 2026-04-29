@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Row, Col } from 'antd';
+import { Row, Col, Spin } from 'antd';
 import styled from 'styled-components';
 import FilterBar from '../../../components/Dashboard/CommonComponts/Filterbar';
 import GestionFilter from '../../../components/Dashboard/EmpleadoComponents/GestionComponents/GestionFilter';
@@ -7,8 +7,10 @@ import GestionTable from '../../../components/Dashboard/EmpleadoComponents/Gesti
 import { exportTableToPdf } from '../../../components/Dashboard/CommonComponts/ExportTablePdf';
 import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
-import { registrosData, REGISTRO_STATUS } from '../../../data/registrosData';
+import { REGISTRO_STATUS } from '../../../data/registrosData';
 import { useNotification } from '../../../components/Dashboard/CommonComponts/ToastNotifications';
+import { useAuth } from '../../../context/AuthContext';
+import axios from 'axios';
 
 const ResponsiveContainer = styled.div`
   padding: 0 16px;
@@ -32,11 +34,20 @@ const SectionContainer = styled.div`
   }
 `;
 
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  width: 100%;
+`;
+
 function EmpleadoGestion() {
   const { theme, currentTheme } = useTheme();
   const { language } = useLanguage();
   const [filtersVisible, setFiltersVisible] = useState(false);
-  const [filteredData, setFilteredData] = useState(registrosData);
+  const [filteredData, setFilteredData] = useState([]);
+  const [originalData, setOriginalData] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilters, setActiveFilters] = useState({
     brand: 'all',
@@ -44,27 +55,53 @@ function EmpleadoGestion() {
     status: 'all',
     dateRange: null
   });
+  const api_url = import.meta.env.VITE_API_URL;
+  const { getAccessToken } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
 
   const notification = useNotification();
   const tableColumnsRef = useRef([]);
-  
-  // Extract unique brands and models for filters
-  const brands = [...new Set(registrosData.map(item => item.datosMotocicleta.marca))].map(
-    brand => ({ id: brand, name: brand })
-  );
-  
-  const models = registrosData.map(item => ({
-    id: item.datosMotocicleta.modelo,
-    name: item.datosMotocicleta.modelo,
-    brandId: item.datosMotocicleta.marca
-  }));
-  
+
   const statuses = [
-    { id: REGISTRO_STATUS.APROBADO, name: 'Aprobado' },
-    { id: REGISTRO_STATUS.PENDIENTE, name: 'Pendiente' },
-    { id: REGISTRO_STATUS.RECHAZADO, name: 'Rechazado' }
+    { id: 'Aprobada', name: 'Aprobada' },
+    { id: 'Pendiente', name: 'Pendiente' },
+    { id: 'Rechazada', name: 'Rechazada' }
   ];
   
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      const response = await axios.get(`${api_url}/api/solicitud/empleado/todas`, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`
+        }
+      });
+      
+      if (response.data.success) {
+        setFilteredData(response.data);
+        setOriginalData(response.data); // Store original data for filtering
+      } else {
+        notification.warning(
+          language === 'en' ? 'warning' : 'Cuidado',
+          language === 'en' ? 'No request has been assigned to this employee' : 'No ha sido asignada ninguna solicitud a este empleado'
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      notification.error(
+        'Error',
+        'Error al cargar los datos. Por favor, intente nuevamente.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch data from API
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   const toggleFilters = () => {
     setFiltersVisible(!filtersVisible);
   };
@@ -82,42 +119,68 @@ function EmpleadoGestion() {
     setFiltersVisible(false);
   };
   
-  // Combined filter and search function
   const applyFiltersAndSearch = (search, filters) => {
-    let result = [...registrosData];
-    
+    let result = originalData;
+
     // Apply search if there's a search term
     if (search && search.trim() !== '') {
       const lowercaseSearch = search.toLowerCase();
-      result = result.filter(record =>
-        record.id.toString().includes(lowercaseSearch) ||
-        record.datosPersonales.nombreCompleto.toLowerCase().includes(lowercaseSearch)
-      );
+      if (result.data) {
+        result = {
+          ...result,
+          data: result.data.filter(record =>
+            record.solicitud.idSolicitud.toString().includes(lowercaseSearch) ||
+            `${record.ciudadano.nombres} ${record.ciudadano.apellidos}`.toLowerCase().includes(lowercaseSearch) ||
+            record.vehiculo.chasis.toLowerCase().includes(lowercaseSearch)
+          )
+        };
+      }
     }
-    
+
     // Apply filters
-    if (filters.brand && filters.brand !== 'all') {
-      result = result.filter(record => record.datosMotocicleta.marca === filters.brand);
+    if (result.data) {
+      let filteredResults = result.data;
+      console.log('Filtered Results:', filters);
+      console.log('Original Data:', filteredResults);
+      if (filters.brand && filters.brand !== 'all') {
+        filteredResults = filteredResults.filter(
+          record => record.vehiculo.marca.nombre === filters.brand
+        );
+      }
+
+      if (filters.model && filters.model !== 'all') {
+        filteredResults = filteredResults.filter(
+          record => record.vehiculo.modelo.nombre === filters.model
+        );
+      }
+
+      if (filters.status && filters.status !== 'all') {
+        filteredResults = filteredResults.filter(
+          record => record.solicitud.estadoDecision === filters.status
+        );
+      }
+
+      if (filters.dateRange && filters.dateRange[0] && filters.dateRange[1]) {
+        const startDate = filters.dateRange[0].startOf('day');
+        const endDate = filters.dateRange[1].endOf('day');
+        
+        filteredResults = filteredResults.filter(record => {
+          const recordDate = new Date(record.solicitud.fechaRegistro);
+          return recordDate >= startDate.toDate() && recordDate <= endDate.toDate();
+        });
+      }
+
+      // Check if no results were found
+      if (filteredResults.length < 1) {
+        notification.info(
+          language === 'es' ? 'No se encontraron resultados' : 'No results found',
+          language === 'es' ? 'Intenta con otros filtros' : 'Try other filters'
+        );
+      }
+
+      result = { ...result, data: filteredResults };
     }
-    
-    if (filters.model && filters.model !== 'all') {
-      result = result.filter(record => record.datosMotocicleta.modelo === filters.model);
-    }
-    
-    if (filters.status && filters.status !== 'all') {
-      result = result.filter(record => record.estado === filters.status);
-    }
-    
-    if (filters.dateRange && filters.dateRange[0] && filters.dateRange[1]) {
-      const startDate = filters.dateRange[0].startOf('day');
-      const endDate = filters.dateRange[1].endOf('day');
-      
-      result = result.filter(record => {
-        const recordDate = new Date(record.fechaSolicitud);
-        return recordDate >= startDate.toDate() && recordDate <= endDate.toDate();
-      });
-    }
-    
+
     setFilteredData(result);
   };
 
@@ -141,61 +204,98 @@ function EmpleadoGestion() {
   const handleExportPDF = async () => {
     try {
       if (!tableColumnsRef.current || tableColumnsRef.current.length === 0) {
-        notification.warning(
-          'Advertencia', 
-          'No hay columnas disponibles para exportar'
-        );
+        notification.warning({
+          message: language === 'es' ? 'Advertencia' : 'Warning',
+          description: language === 'es' 
+            ? 'No hay datos disponibles para exportar'
+            : 'No data available to export'
+        });
         return;
       }
-
+  
+      if (!filteredData.data || filteredData.data.length === 0) {
+        notification.warning({
+          message: language === 'es' ? 'Advertencia' : 'Warning',
+          description: language === 'es'
+            ? 'No hay registros para exportar'
+            : 'No records to export'
+        });
+        return;
+      }
+  
       // Generate subtitle based on active filters
-      let subtitle = '';
-      
+      const subtitleParts = [];
+  
       if (activeFilters.brand && activeFilters.brand !== 'all') {
-        subtitle += `Marca: ${activeFilters.brand} `;
+        const brand = filteredData.data.find(record => 
+          record.vehiculo.marca.id === activeFilters.brand
+        )?.vehiculo.marca.nombre;
+        if (brand) subtitleParts.push(`Marca: ${brand}`);
       }
-      
+  
       if (activeFilters.model && activeFilters.model !== 'all') {
-        subtitle += `Modelo: ${activeFilters.model} `;
+        const model = filteredData.data.find(record => 
+          record.vehiculo.modelo.id === activeFilters.model
+        )?.vehiculo.modelo.nombre;
+        if (model) subtitleParts.push(`Modelo: ${model}`);
       }
-      
+  
       if (activeFilters.status && activeFilters.status !== 'all') {
-        const statusText = statuses.find(s => s.id === activeFilters.status)?.name || activeFilters.status;
-        subtitle += `Estado: ${statusText} `;
+        const status = statuses.find(s => s.id === activeFilters.status)?.name;
+        if (status) subtitleParts.push(`Estado: ${status}`);
       }
-
-      if (activeFilters.dateRange && activeFilters.dateRange[0] && activeFilters.dateRange[1]) {
+  
+      if (activeFilters.dateRange?.[0] && activeFilters.dateRange?.[1]) {
         const startDate = activeFilters.dateRange[0].format('DD/MM/YYYY');
         const endDate = activeFilters.dateRange[1].format('DD/MM/YYYY');
-        subtitle += `Período: ${startDate} - ${endDate}`;
+        subtitleParts.push(`Período: ${startDate} - ${endDate}`);
       }
-
-      // Data transformation function to format dates
-      const transformData = (data) => {
-        return data.map(record => ({
-          ...record,
-          fechaSolicitud: new Date(record.fechaSolicitud).toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          })
-        }));
-      };
-
+  
+      // Transform the data before passing it to exportTableToPdf
+      const transformedData = filteredData.data.map(record => ({
+        id: record.solicitud.idSolicitud,
+        ciudadano: `${record.ciudadano.nombres} ${record.ciudadano.apellidos}`,
+        fechaSolicitud: new Date(record.solicitud.fechaRegistro).toLocaleDateString('es-ES'),
+        marca: record.vehiculo.marca.nombre,
+        modelo: record.vehiculo.modelo.nombre,
+        chasis: record.vehiculo.chasis,
+        estado: record.solicitud.estadoDecision,
+        fechaDecision: record.solicitud.fechaDecision 
+          ? new Date(record.solicitud.fechaDecision).toLocaleDateString('es-ES')
+          : 'Pendiente'
+      }));
+  
       await exportTableToPdf({
         columns: tableColumnsRef.current,
-        data: filteredData,
-        fileName: 'registro-motocicletas',
-        title: 'Registro de Motocicletas',
-        subtitle: subtitle.trim(),
-        transformData,
+        data: transformedData, // Pass the transformed data directly
+        fileName: language === 'es' ? 'registro-motocicletas' : 'motorcycle-registry',
+        title: language === 'es' ? 'Registro de Motocicletas' : 'Motorcycle Registry',
+        subtitle: subtitleParts.join(' | '),
         notificationSystem: notification
       });
+  
     } catch (error) {
       console.error('Export error:', error);
+      notification.error({
+        message: language === 'es' ? 'Error' : 'Error',
+        description: language === 'es'
+          ? 'Error al generar el PDF. Por favor, intente nuevamente.'
+          : 'Error generating PDF. Please try again.'
+      });
+    }
+  };
+  
+
+  const handleRefreshData = async () => {
+    try {
+      await fetchData();
+    } catch (error) {
+      console.error('Error refreshing data:', error);
       notification.error(
-        'Error', 
-        'Error al generar el PDF. Por favor, intente nuevamente.'
+        language === 'en' ? 'Error' : 'Error',
+        language === 'en' 
+          ? 'Error refreshing data. Please try again.' 
+          : 'Error al actualizar los datos. Por favor, intente nuevamente.'
       );
     }
   };
@@ -205,28 +305,30 @@ function EmpleadoGestion() {
       <Row gutter={[16, 24]} className="dashboard-row">
         <Col xs={24} sm={24} md={24} lg={24} xl={24}>
           <SectionContainer>
-            <FilterBar 
+            <FilterBar
               onFilterClick={toggleFilters}
               onSearch={handleSearch}
               onExportPDF={handleExportPDF}
+              searchPlaceholder={language === 'es' ? 'Buscar solicitud...' : 'Search request...'}
             />
             
             <GestionFilter 
               isVisible={filtersVisible}
               onClose={() => setFiltersVisible(false)}
               onApplyFilters={handleApplyFilters}
-              brands={brands}
-              models={models}
               statuses={statuses}
             />
             
-            <GestionTable 
-              registrosData={filteredData}
-              onView={handleView} 
-              onReview={handleReview} 
-              onCarnet={handleCarnet}
-              onTableReady={handleTableReady}
-            />
+            <Spin spinning={isLoading} tip={language === 'es' ? "Cargando datos..." : "Loading data..."}>
+              <GestionTable
+                registrosData={filteredData.data || []}
+                onView={handleView}
+                onReview={handleReview}
+                onCarnet={handleCarnet}
+                onTableReady={handleTableReady}
+                onRefresh={handleRefreshData}
+              />
+            </Spin>
           </SectionContainer>
         </Col>
       </Row>

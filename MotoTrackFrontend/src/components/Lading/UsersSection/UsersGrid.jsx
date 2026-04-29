@@ -103,6 +103,12 @@ const SectionImage = styled(motion.img)`
     transform: translateX(5%);
   }
   
+  @media (max-width: 768px) {
+    width: 100%;
+    max-height: 400px;
+    margin: 2rem auto 0;
+  }
+  
   padding: 4px;
   background: linear-gradient(90deg, #6366f1 0%, #15E6E2 50%, #6366f1 100%);
   background-size: 200% auto;
@@ -127,7 +133,6 @@ const Title = styled.h2`
   text-align: left;
   
   @media (max-width: 768px) {
-    text-align: center;
     font-size: 2.4rem;
   }
 `;
@@ -145,7 +150,6 @@ const Description = styled.p`
   
   @media (max-width: 768px) {
     font-size: 1rem;
-    text-align: center;
     max-width: 100%;
   }
 `;
@@ -170,12 +174,23 @@ const FeatureItem = styled(motion.li)`
   color: #d4d4d8;
   text-align: left;
   width: 100%;
+  
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    gap: 0.6rem;
+  }
 `;
 
 const CheckAnimation = styled(Lottie)`
   width: 24px;
   height: 24px;
   min-width: 24px;
+  
+  @media (max-width: 768px) {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+  }
 `;
 
 const ButtonContainer = styled.div`
@@ -185,7 +200,6 @@ const ButtonContainer = styled.div`
   justify-content: start;
   
   @media (max-width: 768px) {
-    justify-content: center;
   }
 `;
 
@@ -256,7 +270,17 @@ const UsersGrid = ({ selectedCard }) => {
   return (
     <GridContainer>
       <StyledRow gutter={[48, 48]}>
-        <Col xs={24} lg={12}>
+        {/* Imagen - ahora aparecerá ABAJO en móvil */}
+        <Col xs={{ span: 24, order: 2 }} lg={{ span: 12, order: 2 }}>
+          <SectionImage 
+            variants={imageVariants}
+            src={selectedSection.image} 
+            alt={selectedSection.title} 
+          />
+        </Col>
+        
+        {/* Contenido - ahora aparecerá ARRIBA en móvil */}
+        <Col xs={{ span: 24, order: 1 }} lg={{ span: 12, order: 1 }}>
           <Section variants={contentVariants}>
             <ContentContainer>
               <Title>{selectedSection.title}</Title>
@@ -280,13 +304,6 @@ const UsersGrid = ({ selectedCard }) => {
               </ButtonContainer>
             </ContentContainer>
           </Section>
-        </Col>
-        <Col xs={24} lg={12}>
-          <SectionImage 
-            variants={imageVariants}
-            src={selectedSection.image} 
-            alt={selectedSection.title} 
-          />
         </Col>
       </StyledRow>
     </GridContainer>

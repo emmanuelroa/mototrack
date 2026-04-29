@@ -14,7 +14,7 @@ const GestionFilter = ({
   isVisible, 
   onClose, 
   onApplyFilters, 
-  roles = [],
+  cargos = [],
   statuses = []
 }) => {
   const [form] = Form.useForm();
@@ -25,20 +25,20 @@ const GestionFilter = ({
     es: {
       filterTitle: 'Filtros de búsqueda',
       cedula: 'Cédula',
-      role: 'Rol',
+      cargo: 'Cargo',
       status: 'Estado',
       allCedulas: 'Todas las cédulas',
-      allRoles: 'Todos los roles',
+      allCargos: 'Todos los cargos',
       allStatuses: 'Todos los estados',
       cedulaPlaceholder: 'Buscar por cédula'
     },
     en: {
       filterTitle: 'Search Filters',
       cedula: 'ID Number',
-      role: 'Role',
+      cargo: 'Position',
       status: 'Status',
       allCedulas: 'All ID numbers',
-      allRoles: 'All roles',
+      allCargos: 'All positions',
       allStatuses: 'All statuses',
       cedulaPlaceholder: 'Search by ID number'
     }
@@ -56,7 +56,7 @@ const GestionFilter = ({
   };
 
   return (
-    <FilterSection 
+    <FilterSection
       title={t.filterTitle}
       isVisible={isVisible}
       onClose={onClose}
@@ -68,7 +68,7 @@ const GestionFilter = ({
         layout="vertical"
         initialValues={{
           cedula: '',
-          role: 'all',
+          cargo: 'all',
           status: 'all'
         }}
       >
@@ -83,12 +83,12 @@ const GestionFilter = ({
           </Col>
           
           <Col xs={24} sm={12} md={8} lg={8}>
-            <FormItem name="role" label={t.role}>
-              <Select placeholder={t.allRoles}>
-                <Option value="all">{t.allRoles}</Option>
-                {roles?.map(role => (
-                  <Option key={role.id || role.value} value={role.id || role.value}>
-                    {role.name || role.label}
+            <FormItem name="cargo" label={t.cargo}>
+              <Select placeholder={t.allCargos}>
+                <Option value="all">{t.allCargos}</Option>
+                {cargos?.map(cargo => (
+                  <Option key={cargo.id || cargo.value} value={cargo.id || cargo.value}>
+                    {cargo.name || cargo.label}
                   </Option>
                 ))}
               </Select>

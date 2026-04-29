@@ -42,6 +42,7 @@ const StyledRow = styled(motion.div)`
   
   @media (max-width: 768px) {
     min-height: auto;
+    padding-bottom: 30px; /* Añadido padding inferior para evitar cortes */
   }
 `;
 

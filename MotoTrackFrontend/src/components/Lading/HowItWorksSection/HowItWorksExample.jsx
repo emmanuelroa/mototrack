@@ -32,14 +32,14 @@ const StyledCard = styled(MotionCard)`
 
 // Fixed height regardless of content - increased height for mobile
 const CardContent = styled.div`
-  height: 527px; /* Reduced from 650px */
+  height: 527px; /* Altura para desktop */
   display: flex;
   flex-direction: column;
   position: relative;
   overflow-y: auto;
   
   @media (max-width: 768px) {
-    height: 620px; /* Increased from 600px to make container even taller */
+    height: 680px; /* Aumentado de 620px para mostrar los campos adicionales de seguro */
   }
 `;
 

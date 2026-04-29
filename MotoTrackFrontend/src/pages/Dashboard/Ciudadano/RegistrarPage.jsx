@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Row, Col, Card, Button, Space, Form, Alert, Typography } from 'antd';
-import { ArrowLeftOutlined, ArrowRightOutlined, CheckOutlined, WarningOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, ArrowRightOutlined, CheckOutlined, WarningOutlined, LoadingOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import { useTheme } from '../../../context/ThemeContext';
 import { usePrimaryColor } from '../../../context/PrimaryColorContext';
@@ -14,8 +14,9 @@ import Documentos from '../../../components/Dashboard/Ciudadanocomponents/Regist
 import Confirmation from '../../../components/Dashboard/Ciudadanocomponents/RegistroDeMotocicletas/Confirmation';
 import MainButton from '../../../components/Dashboard/CommonComponts/MainButton';
 import { checkMotorcycleLimit, hasReachedActiveLimit as baseHasReachedLimit } from '../../../data/motorcycleService';
-
+import { useAuth } from '../../../context/AuthContext';
 const { Title, Text } = Typography;
+import axios from 'axios';
 
 // Styled components for the page
 const PageContainer = styled.div`
@@ -169,6 +170,31 @@ const RegistrarPage = () => {
   const [loading, setLoading] = useState(true);
   const [hasReachedActiveLimit, setHasReachedActiveLimit] = useState(false);
   const [formData, setFormData] = useState({});
+  const api_url = import.meta.env.VITE_API_URL;
+  const { getAccessToken } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const fetchSolicitude = async (estado = 'Aprobada') => {
+    try {
+      const response = await axios.get(`${api_url}/api/solicitud/mis-solicitudes`, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        params: { estado },
+      });
+      // console.log('Fetched solicitudes:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching solicitudes:', error);
+      notification.error(
+        language === 'en' ? 'Error Fetching Requests' : 'Error al Obtener Solicitudes',
+        language === 'en'
+          ? 'An error occurred while fetching the requests. Please try again later.'
+          : 'Ocurrió un error al obtener las solicitudes. Por favor, inténtelo de nuevo más tarde.'
+      );
+      throw error;
+    }
+  };
 
   // Verificar el límite de motocicletas al cargar el componente
   useEffect(() => {
@@ -176,10 +202,10 @@ const RegistrarPage = () => {
       setLoading(true);
       try {
         // Obtener el conteo real de motocicletas activas utilizando el servicio compartido
-        const activeCount = await checkMotorcycleLimit();
+        const activeCount = await fetchSolicitude();
         
         // El límite se alcanza cuando hay 2 o más motocicletas activas
-        setHasReachedActiveLimit(activeCount >= 2);
+        setHasReachedActiveLimit(activeCount.count >= 2);
         setLoading(false);
       } catch (error) {
         console.error('Error al verificar el límite de motocicletas:', error);
@@ -209,6 +235,7 @@ const RegistrarPage = () => {
       limitDescription: 'You have reached the maximum limit of 2 active motorcycles. To register a new one, you must first deactivate one of your current motorcycles in the Motorcycles section.',
       viewMotorcycles: 'View My Motorcycles',
       returnToDashboard: 'Return to Dashboard',
+      submitting: 'Submitting...',
     },
     es: {
       title: 'Registrar Motocicleta',
@@ -226,6 +253,7 @@ const RegistrarPage = () => {
       limitDescription: 'Has alcanzado el límite máximo de 2 motocicletas activas. Para registrar una nueva, primero debes dar de baja una de tus motocicletas actuales en la sección de Motocicletas.',
       viewMotorcycles: 'Ver Mis Motocicletas',
       returnToDashboard: 'Volver al Dashboard',
+      submitting: 'Enviando...',
     }
   };
   
@@ -236,11 +264,22 @@ const RegistrarPage = () => {
       .then(values => {
         // Save the current form data
         setFormData(prevData => ({
-          ...prevData,
-          ...values
+          ...prevData,  // Mantener los datos anteriores
+          ...values     // Agregar/actualizar los nuevos valores
         }));
-        
+
+        // Restore previously saved data when moving to the next step
         if (currentStep < 3) {
+          const nextStepData = {
+            ...formData,  // Datos previos
+            ...values     // Nuevos valores validados
+          };
+          
+          // Establecer los valores en el form después de cambiar el paso
+          setTimeout(() => {
+            form.setFieldsValue(nextStepData);
+          }, 0);
+
           setCurrentStep(currentStep + 1);
         }
       })
@@ -255,10 +294,85 @@ const RegistrarPage = () => {
     }
   };
 
-  const handleSubmit = () => {
-    // Here you would submit the form data to your API
-    notification.success(t.successMessage);
-    navigate('/panel/ciudadano/motocicletas');
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    const allFormValues = form.getFieldsValue(true);
+    const formData = new FormData();
+  
+    try {
+      // Datos de la motocicleta
+      formData.append('chasis', allFormValues.chassisNumber);
+      formData.append('tipoUso', allFormValues.useType);
+      formData.append('idMarca', allFormValues.brand.id);
+      formData.append('idModelo', allFormValues.model.id);
+      formData.append('color', allFormValues.color);
+      formData.append('cilindraje', allFormValues.engineSize);
+      formData.append('ano', allFormValues.year);
+    
+      // Datos de la persona como objeto
+      const personaData = {
+        cedula: allFormValues.idDocument,
+        sexo: allFormValues.gender === 'male' ? 'M' : 'F',
+        nombres: allFormValues.firstName,
+        apellidos: allFormValues.lastName,
+        estadoCivil: allFormValues.maritalStatus,
+        telefono: allFormValues.phone,
+        correo: allFormValues.email,
+        direccion: allFormValues.address,
+        idProvincia: allFormValues.provincia.id,
+        idMunicipio: allFormValues.municipio.id,
+        fechaNacimiento: allFormValues.birthDate
+      };
+    
+      // Add insurance data if available
+      if (allFormValues.hasInsurance === 'yes') {
+        const seguro = {
+          proveedor: allFormValues.insuranceProvider,
+          numeroPoliza: allFormValues.policyNumber,
+        };
+        formData.append('seguro', JSON.stringify(seguro));
+  
+        const seguroBlob = await fetch(allFormValues.vehicleInsuranceURL).then(r => r.blob());
+        formData.append('seguro_doc', seguroBlob, allFormValues.vehicleInsuranceName);
+      }
+      // Agregar datos de persona como JSON string
+      formData.append('persona', JSON.stringify(personaData));
+    
+      // Archivos
+      const cedulaBlob = await fetch(allFormValues.idCardURL).then(r => r.blob());
+      formData.append('cedula', cedulaBlob, allFormValues.idCardName);
+    
+      const licenciaBlob = await fetch(allFormValues.driverLicenseURL).then(r => r.blob());
+      formData.append('licencia', licenciaBlob, allFormValues.driverLicenseName);
+    
+      const facturaBlob = await fetch(allFormValues.motorInvoiceURL).then(r => r.blob());
+      formData.append('factura', facturaBlob, allFormValues.motorInvoiceName);
+    
+      const response = await axios.post(
+        `${api_url}/api/solicitud/crear`, 
+        formData, 
+        {
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+    
+      console.log('Form data submitted successfully:', response.data);
+      notification.success(t.successMessage);
+      navigate('/panel/ciudadano/motocicletas');
+    } catch (error) {
+      console.error('Error submitting form data:', error);
+      notification.error(
+        language === 'en' ? 'Error Submitting Form' : 'Error al Enviar el Formulario',
+        language === 'en'
+          ? 'An error occurred while submitting the form. Please try again later.'
+          : 'Ocurrió un error al enviar el formulario. Por favor, inténtelo de nuevo más tarde.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
@@ -407,10 +521,15 @@ const RegistrarPage = () => {
                 ) : (
                   <MainButton 
                     onClick={handleSubmit}
-                    icon={<CheckOutlined />}
+                    icon={isSubmitting ? <LoadingOutlined /> : <CheckOutlined />}
+                    disabled={isSubmitting}
                     size={window.innerWidth <= 480 ? "middle" : "default"}
                   >
-                    {t.submit}
+                    {isSubmitting ? (
+                      language === 'es' ? 'Enviando...' : 'Submitting...'
+                    ) : (
+                      t.submit
+                    )}
                   </MainButton>
                 )}
               </div>

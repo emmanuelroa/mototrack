@@ -259,24 +259,7 @@ const VerPerfil = ({ visible, onClose, currentUser, isOwnProfile = false }) => {
             <div key={idx}>
               <FieldContainer isMobile={isMobile} variants={itemVariants}>
                 <DetailLabel>{field.label}</DetailLabel>
-                {field.label === "Contraseña" ? (
-                  <PasswordContainer>
-                    <PasswordValueContainer>
-                      <DetailValue>
-                        {showPassword ? (userData?.password || "********") : "••••••••"}
-                      </DetailValue>
-                    </PasswordValueContainer>
-                    <Button 
-                      type="text" 
-                      icon={showPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />} 
-                      onClick={togglePasswordVisibility}
-                      size="small"
-                      style={{ border: "none", padding: 0, boxShadow: "none" }}
-                    />
-                  </PasswordContainer>
-                ) : (
-                  <DetailValue>{field.value}</DetailValue>
-                )}
+                <DetailValue>{field.value}</DetailValue>
               </FieldContainer>
             </div>
           ))}
@@ -289,24 +272,7 @@ const VerPerfil = ({ visible, onClose, currentUser, isOwnProfile = false }) => {
             <Col key={idx} span={12}>
               <FieldContainer isMobile={isMobile} variants={itemVariants}>
                 <DetailLabel>{field.label}</DetailLabel>
-                {field.label === "Contraseña" ? (
-                  <PasswordContainer>
-                    <PasswordValueContainer>
-                      <DetailValue>
-                        {showPassword ? (userData?.password || "********") : "••••••••"}
-                      </DetailValue>
-                    </PasswordValueContainer>
-                    <Button 
-                      type="text" 
-                      icon={showPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />} 
-                      onClick={togglePasswordVisibility}
-                      size="small"
-                      style={{ border: "none", padding: 0, boxShadow: "none" }}
-                    />
-                  </PasswordContainer>
-                ) : (
-                  <DetailValue>{field.value}</DetailValue>
-                )}
+                <DetailValue>{field.value}</DetailValue>
               </FieldContainer>
             </Col>
           ))}
@@ -323,15 +289,19 @@ const VerPerfil = ({ visible, onClose, currentUser, isOwnProfile = false }) => {
     );
     
     const fields = [
-      { label: "Cédula", value: userData?.document || userData?.cedula || "001-2345678-9" },
-      { label: "Email", value: userData?.email || "admin@mototrack.com" },
-      { label: "Teléfono", value: userData?.phone || userData?.telefono || "+1 809-555-1234" },
-      { label: "Ubicación", value: userData?.location || `${userData?.provincia || ''}, ${userData?.municipio || ''}` || "Sede Central" },
-      { label: "Estado", value: isActive ? "Activo" : "Inactivo" }, // Agregar campo de estado
-      { label: "Fecha de registro", value: userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString() : "1/1/2023" },
+      { label: "Cédula", value: userData?.datosPersonales?.cedula || "---" },
+      { label: "Email", value: userData?.correo || "---@mototrack.com" },
+      { label: "Teléfono", value: userData?.datosPersonales?.telefono || "---" },
+      { label: "Ubicación", value: `${userData?.datosPersonales?.ubicacion?.direccion + ' ' + userData?.datosPersonales?.ubicacion?.municipio?.nombre + ' ' + userData?.datosPersonales?.ubicacion?.provincia?.nombre}` || "Sede Central" },
+      { label: "Estado", value: isActive ? "Activo" : userData?.estado }, // Agregar campo de estado
+      { label: "Fecha de registro", value: userData?.fechaCreacion ? new Date(userData.fechaCreacion).toLocaleDateString() : "---" },
       { 
         label: "Cargo", 
-        value: userData?.position || userData?.cargo || "No especificado" 
+        value: userData?.datosPersonales?.tipoPersona?.nombre|| "No especificado" 
+      },
+      { 
+        label: "Tipo de usuario", 
+        value: userData?.tipoUsuario?.nombre|| "No especificado" 
       }
     ];
     
@@ -341,7 +311,7 @@ const VerPerfil = ({ visible, onClose, currentUser, isOwnProfile = false }) => {
           <motion.div variants={itemVariants}>
             <ResponsiveAvatar 
               size={isMobile ? 70 : 100} 
-              src={userData?.profileImage || userData?.avatar} 
+              src={userData?.ftPerfil || userData?.avatar} 
               icon={<UserOutlined />}
             />
           </motion.div>
@@ -355,12 +325,12 @@ const VerPerfil = ({ visible, onClose, currentUser, isOwnProfile = false }) => {
               {isActive ? (
                 <ActiveTag>Activo</ActiveTag>
               ) : (
-                <InactiveTag>Inactivo</InactiveTag>
+                <InactiveTag>{userData?.estado}</InactiveTag>
               )}
             </motion.div>
             <motion.div variants={itemVariants}>
               <RoleTag>
-                {(userData?.role || userData?.rol) === "ADMIN" ? "Admin" : "Empleado"}
+                {userData?.tipoUsuario?.nombre|| "No especificado"}
               </RoleTag>
             </motion.div>
           </StatusBadges>
@@ -374,9 +344,8 @@ const VerPerfil = ({ visible, onClose, currentUser, isOwnProfile = false }) => {
 
   const renderCiudadanoProfile = () => {
     const fields = [
-      { label: "Email", value: userData?.email || "Curry3@gmail.com" },
-      { label: "Fecha de registro", value: userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString() : "15/1/2023" },
-      { label: "Contraseña", value: userData?.password || "********" }
+      { label: "Email", value: userData?.correo || "email@gmail.com" },
+      { label: "Fecha de registro", value: userData?.fechaCreacion ? new Date(userData?.fechaCreacion).toLocaleDateString() : "---" }
     ];
     
     return (
@@ -385,13 +354,13 @@ const VerPerfil = ({ visible, onClose, currentUser, isOwnProfile = false }) => {
           <motion.div variants={itemVariants}>
             <ResponsiveAvatar 
               size={isMobile ? 70 : 100} 
-              src={userData?.profileImage || "https://i.pravatar.cc/150?img=4"} 
+              src={userData?.ftPerfil || userData?.avatar} 
               icon={<UserOutlined />}
             />
           </motion.div>
           <motion.div variants={itemVariants}>
             <ResponsiveTitle level={3} style={{ marginTop: isMobile ? 12 : 16, marginBottom: isMobile ? 6 : 8 }}>
-              {userData?.firstName} {userData?.lastName}
+              {userData?.firstName || userData?.nombres} {userData?.lastName || userData?.apellidos}
             </ResponsiveTitle>
           </motion.div>
           <StatusBadges $badges={2}>

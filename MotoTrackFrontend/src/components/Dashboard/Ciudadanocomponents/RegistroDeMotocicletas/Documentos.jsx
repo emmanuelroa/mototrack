@@ -227,6 +227,9 @@ const Documentos = ({ form }) => {
     }
   });
 
+  // Get hasInsurance value from form
+  const hasInsurance = form.getFieldValue('hasInsurance');
+  console.log('Has Insurance:', hasInsurance);
   return (
     <FormContainer>
       <Form form={form} layout="vertical" requiredMark={false} style={{ width: '100%' }}>
@@ -274,32 +277,35 @@ const Documentos = ({ form }) => {
             </StyledFormItem>
           </Col>
           
-          <Col span={24}>
-            <StyledFormItem 
-              name="vehicleInsurance" 
-              label={t.vehicleInsurance}
-              rules={[{ required: true, message: t.vehicleInsuranceRequired }]}
-              theme={theme}
-            >
-              <UploadWrapper>
-                <StyledDragger 
-                  {...uploadProps('vehicleInsurance')}
-                  $isDarkMode={isDarkMode}
-                  $primaryColor={primaryColor}
-                >
-                  <p className="ant-upload-drag-icon">
-                    <InboxOutlined style={{ color: primaryColor, fontSize: 48 }} />
-                  </p>
-                  <p className="ant-upload-text">{t.dragOrClick}</p>
-                  <p className="ant-upload-hint">
-                    {t.fileTypes}<br />
-                    {t.maxSize}
-                  </p>
-                </StyledDragger>
-                {renderFileStatus('vehicleInsurance')}
-              </UploadWrapper>
-            </StyledFormItem>
-          </Col>
+          {/* Conditionally render vehicle insurance upload */}
+          {hasInsurance === 'yes' && (
+            <Col span={24}>
+              <StyledFormItem 
+                name="vehicleInsurance" 
+                label={t.vehicleInsurance}
+                rules={[{ required: true, message: t.vehicleInsuranceRequired }]}
+                theme={theme}
+              >
+                <UploadWrapper>
+                  <StyledDragger 
+                    {...uploadProps('vehicleInsurance')}
+                    $isDarkMode={isDarkMode}
+                    $primaryColor={primaryColor}
+                  >
+                    <p className="ant-upload-drag-icon">
+                      <InboxOutlined style={{ color: primaryColor, fontSize: 48 }} />
+                    </p>
+                    <p className="ant-upload-text">{t.dragOrClick}</p>
+                    <p className="ant-upload-hint">
+                      {t.fileTypes}<br />
+                      {t.maxSize}
+                    </p>
+                  </StyledDragger>
+                  {renderFileStatus('vehicleInsurance')}
+                </UploadWrapper>
+              </StyledFormItem>
+            </Col>
+          )}
           
           <Col span={24}>
             <StyledFormItem 

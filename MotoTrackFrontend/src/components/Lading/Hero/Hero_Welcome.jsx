@@ -17,36 +17,85 @@ const WelcomeContainer = styled.div`
   flex-direction: column;
   gap: 2rem;
   padding-top: 0.8rem;
+
+  @media (max-width: 840px) {
+    align-items: center;
+    text-align: center;
+    gap: 1.5rem;
+  }
 `;
 
 const Title = styled.h1`
-  font-size: 3rem;
+  font-size: clamp(2rem, 4vw, 3rem);
   font-weight: bold;
   color: #1a1a1a;
   margin-bottom: 1.5rem;
   line-height: 1.2;
+
+  @media (max-width: 840px) {
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    margin-bottom: 1rem;
+    max-width: 600px;
+  }
 `;
 
 const Subtitle = styled.p`
-  font-size: 1.3rem;
+  font-size: clamp(1.1rem, 2vw, 1.3rem);
   color: #666;
   margin-bottom: 2rem;
   line-height: 1.5;
+
+  @media (max-width: 840px) {
+    font-size: clamp(0.9rem, 1.8vw, 1.1rem);
+    margin-bottom: 1.5rem;
+    max-width: 500px;
+    br {
+      display: none;
+    }
+  }
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
   gap: 1rem;
   margin-bottom: 1.5rem;
+
+  @media (max-width: 840px) {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  @media (max-width: 480px) {
+    max-width: 300px;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
 `;
 
-// Wrap buttons with motion for animations
-const MotionWrapper = styled(motion.div)``;
+const MotionWrapper = styled(motion.div)`
+  @media (max-width: 840px) {
+    width: 100%;
+    
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+`;
 
 const StatsContainer = styled.div`
   display: flex;
   align-items: center;
   gap: 1rem;
+
+  @media (max-width: 840px) {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
 `;
 
 const AvatarGroup = styled.div`
@@ -59,6 +108,17 @@ const AvatarGroup = styled.div`
     border-radius: 50%;
     border: 2px solid white;
     margin-right: -10px;
+
+    @media (max-width: 768px) {
+      width: 34px;
+      height: 34px;
+    }
+
+    @media (max-width: 480px) {
+      width: 30px;
+      height: 30px;
+      margin-right: -8px;
+    }
   }
 `;
 
@@ -69,6 +129,15 @@ const StatsText = styled.div`
   strong {
     color: #6366f1;
     font-weight: 700;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.85rem;
+    text-align: center;
   }
 `;
 

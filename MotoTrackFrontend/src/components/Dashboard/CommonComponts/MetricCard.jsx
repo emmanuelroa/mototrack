@@ -1,11 +1,11 @@
-import React from "react";
-import PropTypes from "prop-types";
-import styled from "styled-components";
-import { motion } from "framer-motion";
-import { useTheme } from "../../../context/ThemeContext";
+import React from 'react';
+import PropTypes from 'prop-types';
+import styled from 'styled-components';
+import { motion } from 'framer-motion';
+import { useTheme } from '../../../context/ThemeContext';
 
 const Card = styled(motion.div)`
-  background: ${(props) => props.theme.token.contentBg};
+  background: ${props => props.theme.token.contentBg};
   padding: 1.2rem;
   position: relative;
   display: flex;
@@ -15,7 +15,7 @@ const Card = styled(motion.div)`
   height: 135px;
   border-radius: 13px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border: 1px solid ${(props) => props.theme.token.titleColor}25;
+  border: 1px solid ${props => props.theme.token.titleColor}25;
 `;
 
 const CardContent = styled.div`
@@ -26,7 +26,7 @@ const CardContent = styled.div`
   justify-content: flex-start;
   height: 100%;
   overflow: hidden;
-  background: ${(props) => props.theme.token.contentBg};
+  background: ${props => props.theme.token.contentBg};
 `;
 
 const IconWrapper = styled.div`
@@ -39,20 +39,19 @@ const IconWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: ${(props) =>
-    props.$bubbleColor || `rgba(${props.$rgbColor}, 0.2)`};
+  background-color: ${props => props.$bubbleColor || `rgba(${props.$rgbColor}, 0.2)`};
   border-radius: 50%;
   z-index: 2;
-
+  
   svg {
     font-size: inherit;
-    color: ${(props) => props.$iconColor || props.theme.token.colorPrimary};
+    color: ${props => props.$iconColor || props.theme.token.colorPrimary};
   }
 `;
 
 const Title = styled.div`
   font-size: 0.95rem;
-  color: ${(props) => props.theme.token.titleColor};
+  color: ${props => props.theme.token.titleColor};
   margin-bottom: 0.6rem;
   padding-right: 48px;
   line-height: 1.2;
@@ -64,10 +63,10 @@ const Title = styled.div`
 const Value = styled.div`
   font-size: 2rem;
   font-weight: 700;
-  color: ${(props) => props.$valueColor || props.theme.token.colorPrimary};
+  color: ${props => props.$valueColor || props.theme.token.colorPrimary};
   margin-bottom: 0.4rem;
   line-height: 1;
-
+  
   span {
     font-size: 1.2rem;
     margin-left: 4px;
@@ -76,7 +75,7 @@ const Value = styled.div`
 
 const Subtitle = styled.div`
   font-size: 0.85rem;
-  color: ${(props) => props.theme.token.subtitleColor};
+  color: ${props => props.theme.token.subtitleColor};
   font-weight: 400;
   line-height: 1.2;
   overflow-wrap: break-word;
@@ -92,37 +91,31 @@ const Subtitle = styled.div`
 // Helper function to convert hex to rgb
 const hexToRgb = (hex) => {
   const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-  const formattedHex = hex.replace(
-    shorthandRegex,
-    (m, r, g, b) => r + r + g + g + b + b
-  );
-
+  const formattedHex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+  
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(formattedHex);
-  return result
-    ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(
-        result[3],
-        16
-      )}`
-    : "65, 104, 88";
+  return result ? 
+    `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : 
+    '65, 104, 88';
 };
 
-function MetricCard({
-  title,
-  icon,
-  value,
-  subtitle,
-  color,
-  bubbleColor,
-  iconColor,
-  animate = true,
+function MetricCard({ 
+  title, 
+  icon, 
+  value, 
+  subtitle, 
+  color, 
+  bubbleColor, 
+  iconColor, 
+  animate = true 
 }) {
   const { theme } = useTheme();
   const defaultColor = theme.token.colorPrimary;
   const rgbColor = hexToRgb(color || defaultColor);
-
+  
   // Use iconColor for the value color as well
   const valueColor = iconColor || color || defaultColor;
-
+  
   return (
     <Card
       initial={animate ? { opacity: 0, y: 20 } : false}
@@ -131,9 +124,9 @@ function MetricCard({
       color={color || defaultColor}
     >
       <CardContent>
-        <IconWrapper
-          $rgbColor={rgbColor}
-          $bubbleColor={bubbleColor}
+        <IconWrapper 
+          $rgbColor={rgbColor} 
+          $bubbleColor={bubbleColor} 
           $iconColor={iconColor || color || defaultColor}
         >
           {icon}
@@ -154,7 +147,7 @@ MetricCard.propTypes = {
   color: PropTypes.string,
   bubbleColor: PropTypes.string,
   iconColor: PropTypes.string,
-  animate: PropTypes.bool,
+  animate: PropTypes.bool
 };
 
 export default MetricCard;

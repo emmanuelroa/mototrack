@@ -37,7 +37,35 @@ const TableContainer = styled.div`
   margin-bottom: 24px;
   border: 1px solid ${props => props.theme.token.titleColor}25;
   position: relative;
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+ 
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  /* Webkit scrollbar styles */
+  &::-webkit-scrollbar {
+    height: 8px;
+    background-color: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: ${props => hexToRgba(props.theme?.token?.primaryColor || '#1890ff', 0.3)};
+    border-radius: 4px;
+
+    &:hover {
+      background-color: ${props => hexToRgba(props.theme?.token?.primaryColor || '#1890ff', 0.5)};
+    }
+  }
+
+  &::-webkit-scrollbar-track {
+    background-color: ${props => props.theme?.token?.contentBg || '#f0f0f0'};
+    border-radius: 4px;
+  }
 `;
 
 // Actualizar el estilo del TableTitle para que se vea bien fuera del contenedor
@@ -118,6 +146,30 @@ const StyledTable = styled(Table)`
   .ant-dropdown-menu-item {
     color: ${props => props.theme?.token?.titleColor || 'inherit'};
   }
+
+  @media (max-width: 768px) {
+    .ant-table {
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .ant-table-thead > tr > th,
+    .ant-table-tbody > tr > td {
+      white-space: nowrap;
+      padding: 12px 8px;
+    }
+
+    .ant-space {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      
+      button {
+        width: 100%;
+        margin: 0;
+      }
+    }
+  }
 `;
 
 // Update the ButtonContainer with borderless, transparent buttons and larger icons
@@ -179,10 +231,10 @@ function GestionTable({ empleadosData = [], onView, onEdit, onDelete, onActivate
   const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
-    if (empleadosData && empleadosData.length > 0) {
-      setData(empleadosData);
+    if (empleadosData.data && empleadosData.data.length > 0) {
+      setData(empleadosData.data);
     }
-  }, [empleadosData]);
+  }, [empleadosData.data]);
 
   // Create a lighter shade for gradient
   const getPrimaryColorLight = (hexColor) => {
@@ -208,13 +260,19 @@ function GestionTable({ empleadosData = [], onView, onEdit, onDelete, onActivate
       name: 'Nombre',
       phone: 'Teléfono',
       role: 'Rol',
+      cargo: 'Cargo',
+      tipoUsuario: 'Tipo Usuario',
       cedula: 'Cédula',
       status: 'Estado',
       actions: 'Acciones',
       active: 'Activo',
+      disable: 'Deshabilitado',
       inactive: 'Inactivo',
       admin: 'Administrador',
       empleado: 'Empleado',
+      agent: 'Agente',
+      analist: 'Analista',
+      supervisor: 'Supervisor',
       gestion: 'Gestión de Empleados',
       rangoRegistros: (range, total) => `${range[0]}-${range[1]} de ${total} empleados`,
       confirmDelete: '¿Está seguro que desea eliminar este empleado?',
@@ -235,13 +293,19 @@ function GestionTable({ empleadosData = [], onView, onEdit, onDelete, onActivate
       name: 'Name',
       phone: 'Phone',
       role: 'Role',
+      cargo: 'Position',
+      tipoUsuario: 'User Type',
       cedula: 'ID Number',
       status: 'Status',
       actions: 'Actions',
       active: 'Active',
+      disable: 'Disable',
       inactive: 'Inactive',
       admin: 'Administrator',
       empleado: 'Employee',
+      agent: 'Agent',
+      analist: 'Analyst',
+      supervisor: 'Supervisor',
       gestion: 'Employee Management',
       rangoRegistros: (range, total) => `${range[0]}-${range[1]} of ${total} employees`,
       confirmDelete: 'Are you sure you want to delete this employee?',
@@ -263,37 +327,7 @@ function GestionTable({ empleadosData = [], onView, onEdit, onDelete, onActivate
 
   // Handler functions for row actions
   const handleView = (record) => {
-    setSelectedEmployee({
-      // Basic info
-      firstName: record.nombres,
-      lastName: record.apellidos,
-      document: record.cedula,
-      email: record.email,
-      phone: record.telefono,
-      role: record.rol.toLowerCase(),
-      status: record.estado,
-      
-      // Additional info from empleadosData
-      birthDate: record.fechaNacimiento,
-      location: `${record.provincia}, ${record.municipio}`,
-      address: record.direccion,
-      position: record.cargo,
-      hireDate: record.fechaContratacion,
-      createdAt: record.fechaRegistro,
-      
-      // Statistics
-      assignedRequests: record.solicitudesAsignadas || 0,
-      processedRequests: record.solicitudesProcesadas || 0,
-      
-      // Profile image
-      profileImage: record.avatar || '', // Use avatar from data
-      
-      // Additional metadata
-      province: record.provincia,
-      municipality: record.municipio,
-      fullAddress: record.direccion,
-      position: record.cargo,
-    });
+    setSelectedEmployee(record);
     
     setShowProfile(true);
   
@@ -394,49 +428,75 @@ function GestionTable({ empleadosData = [], onView, onEdit, onDelete, onActivate
     },
     {
       title: t.email,
-      dataIndex: 'email',
+      dataIndex: 'correo',
       key: 'email',
       width: '20%',
       ellipsis: true,
-      responsive: ['xxl'], // This will hide the column in most views
       hidden: true, // Custom property to identify columns we want to include in PDF
     },
     {
       title: t.phone,
       dataIndex: 'telefono',
       key: 'telefono',
+      render: (_, data) => {
+        // Plain text role representation without bubbles
+        let roleText;
+        if(data?.datosPersonales?.telefono){
+            roleText = data.datosPersonales.telefono.replace(
+            /^(\d{3})(\d{3})(\d{4})$/,
+            "$1-$2-$3"
+            );
+        }else {
+          roleText = 'No disponible';
+        }
+        
+        return <span style={{ fontWeight: '500' }}>{roleText}</span>;
+      },
       width: '12%', // Increased from 10% to 12%
     },
     {
-      title: t.role,
-      dataIndex: 'rol',
-      key: 'rol',
-      render: (rol) => {
-        // Plain text role representation without bubbles
+      title: t.tipoUsuario,
+      dataIndex: 'tipoUsuario',
+      key: 'tipoUsuario',
+      render: (_, typeUser) => {
         let roleText;
-        
-        if (rol === EMPLEADO_ROL.ADMIN) {
+        if (typeUser?.tipoUsuario?.nombre === EMPLEADO_ROL.ADMIN) {
           roleText = t.admin;
-        } else if (rol === EMPLEADO_ROL.SUPERVISOR) {
-          roleText = t.supervisor || 'Supervisor'; // Fallback if translation missing
-        } else {
+        } else if (typeUser?.tipoUsuario?.nombre === EMPLEADO_ROL.EMPLEADO) {
           roleText = t.empleado;
+        } else {
+          roleText = 'No disponible';
         }
         
         return <span style={{ fontWeight: '500' }}>{roleText}</span>;
       },
       filters: [
         { text: t.admin, value: EMPLEADO_ROL.ADMIN },
-        { text: t.supervisor || 'Supervisor', value: EMPLEADO_ROL.SUPERVISOR },
-        { text: t.empleado, value: EMPLEADO_ROL.AGENTE },
+        { text: t.empleado, value: EMPLEADO_ROL.EMPLEADO },
       ],
-      onFilter: (value, record) => record.rol === value,
+      onFilter: (value, record) => {
+        return record?.tipoUsuario?.nombre === value;
+      },
       width: '12%',
     },
     {
       title: t.cedula,
       dataIndex: 'cedula',
       key: 'cedula',
+      render: (_, data) => {
+        // Plain text role representation without bubbles
+        let roleText;
+        if(data?.datosPersonales?.cedula){
+            roleText = data.datosPersonales.cedula.replace(
+            /^(\d{3})(\d{7})(\d{1})$/,
+            "$1-$2-$3"
+            );
+        }else {
+          roleText = 'No disponible';
+        }
+        
+        return <span style={{ fontWeight: '500' }}>{roleText}</span>;
+      },
       width: '12%', // Increased from 10% to 12%
     },
     {
@@ -444,14 +504,17 @@ function GestionTable({ empleadosData = [], onView, onEdit, onDelete, onActivate
       dataIndex: 'estado',
       key: 'estado',
       render: (estado) => {
-        if (estado === 'ACTIVO') {
+        if (estado == 'activo') {
           return <StatusTag status={USUARIO_STATUS.ACTIVO} />;
+        } else if (estado == 'deshabilitado') {
+          return <StatusTag status={USUARIO_STATUS.DESHABILITADO} />;
         }
-        return <StatusTag status={USUARIO_STATUS.INACTIVO} />;
+        return <StatusTag status={USUARIO_STATUS.INACTIVO} />
       },
       filters: [
-        { text: t.active, value: 'ACTIVO' },
-        { text: t.inactive, value: 'INACTIVO' },
+        { text: t.active, value: 'activo' },
+        { text: t.disable, value: 'deshabilitado' },
+        { text: t.inactive, value: 'inactivo' }
       ],
       onFilter: (value, record) => record.estado === value,
       width: '10%',

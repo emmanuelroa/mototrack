@@ -76,60 +76,16 @@ const VerDetallesMotocicleta = ({ visible, onClose, data }) => {
   
   // Get current translations
   const t = translations[language] || translations.es;
-  
+
   // Reset active tab when the modal opens with new data
   useEffect(() => {
     if (visible) {
       setActiveTab("1");
     }
-  }, [visible, data?.id]);
-  
-  // Mock data for examples (in a real app, this would come from API)
-  const mockUserData = {
-    nombreCompleto: "Juan Pérez Rodríguez",
-    fechaNacimiento: "15/05/1985",
-    sexo: "Masculino",
-    cedulaIdentidad: "001-1234567-8",
-    telefono: "(809) 555-1234",
-    estadoCivil: "Casado",
-    direccion: "Calle Principal #123, Santo Domingo",
-    correoElectronico: "juan.perez@example.com"
-  };
-  
-  // Actualizar las URLs para usar formato de URL pública para Vite
-  const mockDocumentos = [
-    { 
-      id: 1, 
-      tipo: "Cédula de Identidad", 
-      archivo: "cedula.jpg",
-      url: "/placeholder-cedula.jpg" // Usar URL pública
-    },
-    { 
-      id: 2, 
-      tipo: "Licencia de Conducir", 
-      archivo: "licencia2.jpg",
-      // Usar rutas públicas precedidas por "/" para Vite
-      url: "/assets/Dashboard/CiudadanoDashbaord/licencia2.jpg"
-    },
-    { 
-      id: 3, 
-      tipo: "Factura de Compra", 
-      archivo: "Registro municipal de motocicletas .pdf",
-      // Usar rutas públicas precedidas por "/" para Vite
-      url: "/assets/Dashboard/CiudadanoDashbaord/Registro municipal de motocicletas .pdf"
-    },
-    { 
-      id: 4, 
-      tipo: "Póliza de Seguro", 
-      archivo: "poliza.pdf",
-      url: "/placeholder-poliza.pdf" // Usar URL pública
-    }
-  ];
+  }, [visible, data?.solicitud?.idSolicitud]);
   
   // Handle download card for approved motorcycles
   const handleDownloadCard = () => {
-    console.log(`${t.downloading} ${data?.id}`);
-    // Implementation for downloading the card
   };
   
   // Handle edit request for rejected motorcycles
@@ -141,35 +97,31 @@ const VerDetallesMotocicleta = ({ visible, onClose, data }) => {
   };
   
   // Memoize tab content to prevent unnecessary re-renders
-  const datosPersonalesContent = <DatosPersonalesConfirmation userData={mockUserData} />;
+  const datosPersonalesContent = <DatosPersonalesConfirmation userData={data?.ciudadano} />;
   const datosMotocicletaContent = data ? <DatosMotocicletasConfirmation motoData={data} /> : null;
   
-  // Transform mockDocumentos to match the format required by DocumentosConfirmationParaVerDetalles
-  const documentFormData = {
-    driverLicenseName: mockDocumentos[1]?.archivo || "licencia.jpg",
-    driverLicenseType: "JPG",
-    driverLicenseURL: mockDocumentos[1]?.url || "",
-    
-    idCardName: mockDocumentos[0]?.archivo || "cedula.png",
-    idCardType: "PNG",
-    idCardURL: mockDocumentos[0]?.url || "",
-    
-    vehicleInsuranceName: mockDocumentos[3]?.archivo || "seguro.pdf",
-    vehicleInsuranceType: "PDF",
-    vehicleInsuranceURL: mockDocumentos[3]?.url || "",
-    
-    motorInvoiceName: mockDocumentos[2]?.archivo || "factura.pdf",
-    motorInvoiceType: "PDF",
-    motorInvoiceURL: mockDocumentos[2]?.url || "",
+  const documentosContent = <DocumentosConfirmationParaVerDetalles data={data} />;
+
+  const mapApiStatusToInternal = (apiStatus) => {
+    switch (apiStatus) {
+      case 'Aprobada':
+        return 'MOTO_APROBADA';
+      case 'Pendiente':
+        return 'MOTO_PENDIENTE';
+      case 'Rechazada':
+        return 'MOTO_RECHAZADA';
+      default:
+        return 'UNKNOWN'; // Valor por defecto si no coincide
+    }
   };
-  
-  const documentosContent = <DocumentosConfirmationParaVerDetalles formData={documentFormData} />;
-  
+
   // Render appropriate status component based on motorcycle state
   const renderEstadoContent = () => {
     if (!data) return null;
-    
-    switch (data.estado) {
+  
+    // Usar una variable local para almacenar el estado mapeado
+    const mappedStatus = mapApiStatusToInternal(data?.solicitud?.estadoDecision);
+    switch (mappedStatus) {
       case MOTO_STATUS.APROBADA:
         return <DetalleAprobado data={data} onDownloadCard={handleDownloadCard} />;
       case MOTO_STATUS.PENDIENTE:
@@ -195,9 +147,9 @@ const VerDetallesMotocicleta = ({ visible, onClose, data }) => {
       <ModalContent>
         <TitleContainer>
           <ModalTitle level={4}>
-            {t.details} {data.modelo}
+            {t.details} {(`${data.vehiculo.marca.nombre} ${data.vehiculo.modelo.nombre} (${data.vehiculo.año})`) || "No disponible"}
           </ModalTitle>
-          <StatusTag status={data.estado || MOTO_STATUS.PENDIENTE} />
+          <StatusTag status={mapApiStatusToInternal(data.solicitud.estadoDecision) || MOTO_STATUS.PENDIENTE} />
         </TitleContainer>
         
         <TabsDeDetalles

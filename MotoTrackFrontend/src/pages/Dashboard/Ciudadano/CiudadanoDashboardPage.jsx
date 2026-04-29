@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Typography, Row, Col } from 'antd';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
@@ -29,6 +29,7 @@ const ResponsiveContainer = styled.div`
 function CiudadanoDashboardPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const [refreshMetricsTrigger, setRefreshMetricsTrigger] = useState(0);
   
   const handleViewAllMotos = () => {
     navigate('/panel/ciudadano/motocicletas');
@@ -38,27 +39,32 @@ function CiudadanoDashboardPage() {
     navigate('/panel/ciudadano/registrar');
   };
 
+  const handleRefreshMetrics = () => {
+    setRefreshMetricsTrigger(prev => prev + 1);
+  };
+
   return (
     <ResponsiveContainer>
       <Row gutter={[16, 24]} className="dashboard-row">
         <Col xs={24} sm={24} md={24} lg={24} xl={24}>
-          <MetricsCards />
+          <MetricsCards refreshTrigger={refreshMetricsTrigger} />
         </Col>
       </Row>
       
-      <Row gutter={[16, 16]} className="dashboard-row">
+      {/* <Row gutter={[16, 16]} className="dashboard-row">
         <Col xs={24} sm={24} md={24} lg={24} xl={24}>
           <InitialWarning />
         </Col>
-      </Row>
+      </Row> */}
       
       <Row gutter={[24, 24]}>
         <Col xs={24} sm={24} md={24} lg={24} xl={24}>
           
-            <MisMotocicletas 
+            <MisMotocicletas
               isPreview={true}
               onViewAll={handleViewAllMotos}
               onAddNew={handleAddNewMoto}
+              onRefreshMetrics={handleRefreshMetrics}
             />
         
         </Col>

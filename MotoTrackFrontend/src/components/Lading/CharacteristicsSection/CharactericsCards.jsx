@@ -15,11 +15,11 @@ import ValidationAnimation from "../../../assets/Lading/Characteristics/Validati
 // Create a motion version of Card first
 const MotionCard = motion.create(Card);
 
-// Then style the motion component
+// Entonces estilizar el componente de motion
 const StyledCard = styled(MotionCard)`
-  width: clamp(260px, 25vw, 320px);
-  height: clamp(150px, 16vw, 180px);
-  margin: clamp(6px, 1vw, 12px);
+  width: clamp(220px, 22vw, 280px); // Reducido de 260px, 25vw, 320px
+  height: clamp(140px, 14vw, 160px); // Reducido de 150px, 16vw, 180px
+  margin: clamp(4px, 0.8vw, 8px); // Reducido de 6px, 1vw, 12px
   border-radius: 20px;
   background: ${props => props.$isHovered 
     ? 'linear-gradient(135deg, #FFFFFF 0%, #FAFAFE 50%, #F7F6FF 100%)'
@@ -43,10 +43,24 @@ const StyledCard = styled(MotionCard)`
   }
   
   @media (max-width: 768px) {
-    width: 260px; /* Tamaño fijo en móviles para mejor visualización */
-    height: 150px;
+    width: 200px; // Reducido de 240px
+    height: 130px; // Reducido de 140px
+    margin: 4px; // Reducido de 5px
+  }
+  
+  @media (max-width: 480px) {
+    width: 180px; // Reducido de 220px
+    height: 120px; // Reducido de 130px
+    margin: 3px; // Reducido de 4px
+    border-radius: 16px; // Bordes menos pronunciados
+    
+    .ant-card-body {
+      padding: 10px; // Padding reducido
+    }
   }
 `;
+
+// Mejoras adicionales en los elementos internos de la tarjeta
 
 const ShineEffect = styled.div`
   position: absolute;
@@ -61,8 +75,8 @@ const ShineEffect = styled.div`
 `;
 
 const IconWrapper = styled.div`
-  width: clamp(36px, 4vw, 48px);
-  height: clamp(36px, 4vw, 48px);
+  width: clamp(32px, 3.5vw, 42px); // Reducido de 36px, 4vw, 48px
+  height: clamp(32px, 3.5vw, 42px);
   border-radius: 50%;
   background: ${props => props.$isHovered 
     ? 'rgba(99, 91, 255, 0.12)'
@@ -70,35 +84,53 @@ const IconWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: clamp(8px, 1vw, 12px);
+  margin-bottom: clamp(6px, 0.8vw, 10px); // Reducido de 8px, 1vw, 12px
   transition: all 0.3s ease;
   transform: ${props => props.$isHovered ? 'scale(1.05)' : 'scale(1)'};
+  
+  @media (max-width: 480px) {
+    width: 28px; // Reducido de 32px
+    height: 28px;
+    margin-bottom: 4px; // Reducido de 6px
+  }
 `;
 
 const StyledLottie = styled(Lottie)`
   width: clamp(22px, 2.5vw, 28px);
   height: clamp(22px, 2.5vw, 28px);
   object-fit: contain;
+  
+  @media (max-width: 480px) {
+    width: 20px;
+    height: 20px;
+  }
 `;
 
 const Title = styled.h3`
-  font-size: clamp(14px, 1.6vw, 16px);
+  font-size: clamp(13px, 1.4vw, 15px); // Reducido de 14px, 1.6vw, 16px
   font-weight: 600;
   color: ${props => props.$isHovered ? '#5F5999' : '#1F2937'};
-  margin: 0 0 clamp(4px, 0.6vw, 6px) 0;
+  margin: 0 0 clamp(3px, 0.5vw, 5px) 0; // Reducido de 4px, 0.6vw, 6px
   transition: color 0.3s ease;
+  
+  @media (max-width: 480px) {
+    font-size: 11px; // Reducido de 12px
+    margin-bottom: 2px;
+  }
 `;
 
 const Description = styled.p`
-  font-size: clamp(11px, 1.3vw, 13px);
+  font-size: clamp(10px, 1.2vw, 12px); // Reducido de 11px, 1.3vw, 13px
   color: ${props => props.$isHovered ? '#7A73A8' : '#6B7280'};
   margin: 0;
   line-height: 1.4;
   transition: color 0.3s ease;
   
   @media (max-width: 480px) {
+    font-size: 9px; // Reducido de 10px
+    line-height: 1.3;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2; // Reducido de 3 a 2 líneas
     -webkit-box-orient: vertical;
     overflow: hidden;
   }

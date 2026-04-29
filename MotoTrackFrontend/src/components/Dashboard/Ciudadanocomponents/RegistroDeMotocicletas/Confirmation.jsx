@@ -5,6 +5,7 @@ import DatosPersonalesConfirmation from './Confirmation/DatosPersonalesConfirmat
 import DatosMotocicletasConfirmation from './Confirmation/DatosMotocicletasConfirmation';
 import DocumentosConfirmation from './Confirmation/DocumentosConfirmation';
 import TabsRegistro from './Confirmation/TabsRegistro';
+import moment from 'moment';
 
 const ConfirmationContainer = styled.div`
   margin-top: 20px;
@@ -14,41 +15,49 @@ const Confirmation = ({ form, formData, onSubmit }) => {
   const { language } = useLanguage();
   const [activeTab, setActiveTab] = React.useState('1');
   
+  
+  // Obtener todos los valores del formulario, incluyendo los documentos
+  const allFormValues = form.getFieldsValue(true); // El true asegura que se obtengan todos los valores
+  
   // Map form data to the expected structure for each component
   const personalData = {
-    nombreCompleto: formData?.fullName,
-    fechaNacimiento: formData?.birthDate ? formData.birthDate.format('YYYY-MM-DD') : '',
+    nombreCompleto: formData?.fullName || allFormValues?.firstName + ' ' + allFormValues?.lastName,
+    fechaNacimiento: formData?.birthDate ? moment(formData.birthDate).format('YYYY-MM-DD') : '',
     sexo: formData?.gender === 'male' ? 'Masculino' : 'Femenino',
-    cedulaIdentidad: formData?.idDocument,
+    cedula: formData?.idDocument,
     telefono: formData?.phone,
     estadoCivil: formData?.maritalStatus,
     direccion: formData?.address,
-    correoElectronico: formData?.email,
-    sector: formData?.sector
+    correo: formData?.email,
   };
-
+  //console.log("Confirmation está pasando formData:", allFormValues);
   const motorcycleData = {
-    marca: formData?.brand,
-    modelo: formData?.model,
-    año: formData?.year,
-    color: formData?.color,
-    cilindraje: formData?.engineSize ? `${formData.engineSize} cc` : '',
-    tipoUso: formData?.useType,
-    numeroChasis: formData?.chassisNumber,
-    seguro: formData?.hasInsurance === 'yes' ? 'Sí' : 'No',
-    proveedorSeguro: formData?.insuranceProvider,
-    numeroPóliza: formData?.policyNumber
+    vehiculo: {
+      año: formData?.year,
+      color: formData?.color,
+      cilindraje: formData?.engineSize ? `${formData.engineSize}` : '',
+      marca: {
+        id: allFormValues?.brand.id,
+        nombre: allFormValues?.brand.nombre
+      },
+      modelo: {
+        id: allFormValues?.model.id,
+        nombre: allFormValues?.model.nombre,
+      },
+      tipoUso: formData?.useType,
+      chasis: formData?.chassisNumber,
+    },
+    ...(formData?.hasInsurance === 'yes' ? {
+      seguro: {
+        proveedor: formData?.insuranceProvider,
+        numeroPoliza: formData?.policyNumber
+      }
+    } : null)
   };
 
   const handleTabChange = (key) => {
     setActiveTab(key);
   };
-
-  // Obtener todos los valores del formulario, incluyendo los documentos
-  const allFormValues = form.getFieldsValue(true); // El true asegura que se obtengan todos los valores
-  
-  // Log para verificar qué valores se están pasando
-  console.log("Confirmation está pasando formData:", allFormValues);
 
   return (
     <ConfirmationContainer>

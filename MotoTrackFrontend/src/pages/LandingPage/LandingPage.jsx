@@ -44,33 +44,28 @@ const LandingContainer = styled.div`
 
 const HeroSection = styled.section`
   width: 100%;
-  height: 100vh;
-  min-height: 500px;
   display: flex;
   flex-direction: column;
-  padding-top: 140px;
+  /* Removed min-height: 100vh to normalize spacing */
+  padding: clamp(80px, 8vh, 100px) 0 clamp(40px, 5vw, 60px);
+  position: relative;
+  z-index: 1;
   
   @media (max-width: 768px) {
-    height: auto;
-    min-height: 90vh;
-    padding-top: 110px;
-  }
-  
-  @media (max-height: 600px) and (orientation: landscape) {
-    height: auto;
-    min-height: 100vh;
+    padding: clamp(60px, 6vh, 80px) 0 clamp(30px, 4vw, 40px);
   }
 `;
 
 const Section = styled.section`
   width: 100%;
-  padding: clamp(20px, 2vw, 30px) 0;
-  margin-top: -20px;
-  min-height: auto;
+  padding: clamp(40px, 5vw, 60px) 0;
+  position: relative;
+  z-index: 1;
+  /* Remove margin-top since we're normalizing spacing */
+  margin: 0;
   
   @media (max-width: 768px) {
-    padding: 10px 0;
-    margin-top: -15px;
+    padding: clamp(30px, 4vw, 40px) 0;
   }
 `;
 
@@ -81,28 +76,31 @@ const BlackSection = styled.div`
   color: white;
   z-index: 5;
   padding: 60px 0;
-  margin-top: -10px;
+  margin-top: -10px;  /* Ajustado para mejor transición */
   height: auto;
-  min-height: 600px; /* Fixed minimum height to maintain consistency */
+  min-height: 600px;
   box-sizing: border-box;
   
-  /* Fixed skew angle */
-  transform: skewY(-5deg);
-  transform-origin: 0 0;
-  
-  /* Extend background */
+  /* Suavizar transición con la sección anterior */
   &:before {
     content: '';
     position: absolute;
-    top: 0;
+     margin-top: 10px;
+    top: -100;
     left: -50vw;
     right: -50vw;
     bottom: 0;
     background: black;
     z-index: -1;
+    transform: skewY(-5deg);
+    transform-origin: 0 0;
   }
   
-  /* Maintain consistent dimensions across devices */
+  /* Remover skew del contenedor principal */
+  transform: none;
+  
+  /* Resto de los media queries... */
+  
   @media (max-width: 768px) {
     padding: 40px 0;
     margin-top: -15px;
@@ -169,7 +167,6 @@ function LandingPage() {
 
   return (
     <>
-    
       <LandingContainer>
         <Nav />
         
@@ -181,7 +178,7 @@ function LandingPage() {
           <Characteristic />
         </Section>
 
-        <Section id="how-it-works">
+        <Section id="how-it-works" style={{ paddingBottom: "30px" }}>
           <HowItWorks />
         </Section>
 

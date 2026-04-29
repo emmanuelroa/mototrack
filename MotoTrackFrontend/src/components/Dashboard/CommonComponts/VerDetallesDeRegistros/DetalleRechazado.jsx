@@ -225,7 +225,7 @@ const ButtonsContainer = styled.div`
 /**
  * DetalleRechazado - Component to display rejection details for a motorcycle registration
  */
-const DetalleRechazado = ({ data = {}, onEditRequest }) => {
+const DetalleRechazado = ({ data = {}, isCityzen, onEditRequest }) => {
   const { theme, currentTheme } = useTheme();
   const { language } = useLanguage();
   const isDarkMode = currentTheme === 'themeDark';
@@ -262,17 +262,34 @@ const DetalleRechazado = ({ data = {}, onEditRequest }) => {
   // Get current translations
   const t = translations[language] || translations.es;
   
-  // Extract relevant data from the registration object
-  const rechazoDetalles = data.rechazoDetalles || {};
-  
   // Format rejection data
   const rejectionData = {
-    fechaRechazo: formatDate(rechazoDetalles.fechaRechazo) || 'Sin fecha',
-    rechazadoPor: rechazoDetalles.rechazadoPor || 'No especificado',
-    motivoRechazo: rechazoDetalles.motivoRechazo || 'No especificado',
-    detalleRechazo: rechazoDetalles.detallesRechazo || 'Sin detalles adicionales',
-    historial: rechazoDetalles.historial || []
+    fechaRechazo: formatDate(data?.solicitud?.fechaProcesada) || 'Sin fecha',
+    rechazadoPor: (data?.empleado?.nombres + " " + data?.empleado?.apellidos) || 'No asignado',
+    motivoRechazo: data?.solicitud?.motivoRechazo || 'No especificado',
+    detalleRechazo: data?.solicitud?.detalleRechazo || 'Sin detalles adicionales',
+    historial: [
+      {
+        estado: "Rejected",
+        fecha: data?.solicitud?.fechaProcesada || 'Sin fecha',
+        responsable: (data?.empleado?.nombres + " " + data?.empleado?.apellidos) || 'No asignado',
+        descripcion: "Solicitud rechazada por documentación incompleta según normativa vigente."
+      },
+      {
+        estado: "In Review",
+        fecha: data?.solicitud?.fechaProcesada || 'Sin fecha',
+        responsable: (data?.empleado?.nombres + " " + data?.empleado?.apellidos) || 'No asignado',
+        descripcion: "Documentación en revisión por el departamento de tránsito"
+      },
+      {
+        estado: "Received",
+        fecha: data?.solicitud?.fechaRegistro || 'Sin fecha',
+        responsable: "Sistema",
+        descripcion: "Solicitud recibida y registrada en el sistema"
+      }
+    ]
   };
+
 
   // Handle navigation to registration page
   const handleNewRequest = () => {
@@ -324,16 +341,20 @@ const DetalleRechazado = ({ data = {}, onEditRequest }) => {
             {rejectionData.detalleRechazo}
           </TimelineItemDescription>
         </RejectionReasonCard>
-
-        <ButtonsContainer>
-          <MainButton 
-            icon={<PlusCircleOutlined />}
-            onClick={handleNewRequest}
-            size={window.innerWidth <= 480 ? "middle" : "default"}
-          >
-            {t.createNewRequest}
-          </MainButton>
-        </ButtonsContainer>
+        
+        {
+          isCityzen && (
+            <ButtonsContainer>
+              <MainButton 
+                icon={<PlusCircleOutlined />}
+                onClick={handleNewRequest}
+                size={window.innerWidth <= 480 ? "middle" : "default"}
+              >
+                {t.createNewRequest}
+              </MainButton>
+            </ButtonsContainer>
+          )
+        }
       </StatusCard>
 
       <TimelineContainer>

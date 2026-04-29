@@ -11,33 +11,37 @@ import adminAnimation from '../../../assets/Lading/Users/Training.json';
 
 const CardsContainer = styled(motion.div)`
   display: flex;
-  gap: 1rem;
+  gap: clamp(0.5rem, 2vw, 1rem);
   justify-content: center;
-  align-items: center;
-  padding: 2rem 0;
+  align-items: stretch;
+  padding: clamp(1rem, 3vw, 2rem) 0;
   background-color: transparent;
   flex-wrap: wrap;
-  width: 1200px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
   
   @media (max-width: 992px) {
-    width: 100%;
-    padding: 2rem;
+    padding: 1.5rem clamp(0.5rem, 2vw, 1rem);
   }
 `;
 
 const Card = styled(motion.div)`
-  width: 380px;
-  height: 180px;
-  border-radius: 20px;
+  flex: 1;
+  min-width: 280px;
+  max-width: 380px;
+  height: auto;
+  min-height: 160px;
+  border-radius: 16px;
   background: ${props => props.$isHovered || props.$isSelected
     ? '#1a1a1a'
     : 'transparent'};
   box-shadow: ${props => props.$isHovered || props.$isSelected
     ? '0 4px 20px rgba(99, 91, 255, 0.3)'
     : '0 4px 16px rgba(0, 0, 0, 0.2)'};
-  transition: all 0.2s ease; /* Reduced from 0.3s for faster response */
+  transition: all 0.2s ease;
   border: ${props => props.$isSelected ? '2px solid #635BFF' : '1px solid #333'};
-  padding: 20px;
+  padding: clamp(16px, 2vw, 20px);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -47,6 +51,18 @@ const Card = styled(motion.div)`
   
   &:hover {
     transform: translateY(-5px);
+  }
+  
+  @media (max-width: 768px) {
+    min-width: 250px;
+    margin: 0.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    min-width: 220px;
+    padding: clamp(12px, 3vw, 16px);
+    margin: 0.25rem;
   }
 `;
 
@@ -89,12 +105,12 @@ const ContentWrapper = styled.div`
   flex-direction: column;
   align-items: flex-start;
   text-align: left;
-  margin-left: 24px;
+  margin-left: clamp(12px, 2vw, 24px);
   flex: 1;
   
   @media (max-width: 480px) {
     margin-left: 0;
-    margin-top: 16px;
+    margin-top: 12px;
     align-items: center;
     text-align: center;
   }
@@ -113,8 +129,8 @@ const ShineEffect = styled.div`
 `;
 
 const IconWrapper = styled.div`
-  min-width: 60px;
-  height: 60px;
+  min-width: clamp(48px, 6vw, 60px);
+  height: clamp(48px, 6vw, 60px);
   border-radius: 50%;
   background: ${props => props.$isHovered || props.$isSelected
     ? 'rgba(99, 91, 255, 0.25)'
@@ -128,15 +144,15 @@ const IconWrapper = styled.div`
 `;
 
 const Title = styled.h3`
-  font-size: 18px;
+  font-size: clamp(14px, 2vw, 18px);
   font-weight: 600;
   color: ${props => props.$isHovered || props.$isSelected ? '#A7A0FE' : '#FFFFFF'};
-  margin: 0 0 8px 0;
+  margin: 0 0 clamp(4px, 1vw, 8px) 0;
   transition: color 0.3s ease;
 `;
 
 const Description = styled.p`
-  font-size: 14px;
+  font-size: clamp(12px, 1.5vw, 14px);
   color: ${props => props.$isHovered || props.$isSelected ? '#C4C0FF' : '#BBBBBB'};
   margin: 0;
   line-height: 1.5;

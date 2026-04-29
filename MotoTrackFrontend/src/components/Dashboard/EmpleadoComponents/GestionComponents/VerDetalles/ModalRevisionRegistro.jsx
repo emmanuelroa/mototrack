@@ -14,6 +14,8 @@ import { REGISTRO_STATUS } from '../../../../../data/registrosData';
 import DetalleAprobado from '../../../CommonComponts/VerDetallesDeRegistros/DetalleAprobado';
 import DetalleRechazado from '../../../CommonComponts/VerDetallesDeRegistros/DetalleRechazado';
 import DetallePendiente from '../../../CommonComponts/VerDetallesDeRegistros/DetallePendiente';
+import { useAuth } from '../../../../../context/AuthContext';
+import axios from 'axios';
 
 // ...rest of the file stays the same
 
@@ -59,7 +61,10 @@ const ModalRevisionRegistro = ({
   const [processingStatus, setProcessingStatus] = useState(false);
   const { language } = useLanguage();
   const notification = useNotification();
-  
+  const api_url = import.meta.env.VITE_API_URL;
+  const { getAccessToken } = useAuth();
+  const [personalData, setPersonalData] = useState(null);
+
   const translations = {
     en: {
       viewDetails: "Registration Details",
@@ -72,87 +77,126 @@ const ModalRevisionRegistro = ({
       unavailableStatus: "Estado no disponible"
     }
   };
-  
   const t = translations[language] || translations.es;
   
   useEffect(() => {
     if (visible) {
       setActiveTab("1");
     }
-  }, [visible, data?.id]);
+  }, [visible, data?.idsolicitud]);
 
   const datosPersonalesContent = data ? (
-    <DatosPersonalesConfirmation userData={data.datosPersonales} />
+    <DatosPersonalesConfirmation userData={
+      {
+        nombres: data.ciudadano.nombres,
+        apellidos: data.ciudadano.apellidos,
+        fechaNacimiento: data.ciudadano.fechaNacimiento,
+        sexo: data.ciudadano.sexo,
+        cedula: data.ciudadano.cedula,
+        telefono: data.ciudadano.telefono,
+        estadoCivil: data.ciudadano.estadoCivil,
+        correo: data.ciudadano.correo,
+        ubicacion: {
+          direccion: data.ciudadano.ubicacion.direccion,
+        }
+      }
+    } />
   ) : null;
 
   const datosMotocicletaContent = data ? (
-    <DatosMotocicletasConfirmation motoData={data.datosMotocicleta} />
+    <DatosMotocicletasConfirmation motoData={
+      {
+        vehiculo: {
+          marca: {
+            nombre: data.vehiculo.marca.nombre,
+          },
+          modelo: {
+            nombre: data.vehiculo.modelo.nombre,
+          },
+          año: data.vehiculo.año,
+          color: data.vehiculo.color,
+          cilindraje: data.vehiculo.cilindraje,
+          tipoUso: data.vehiculo.tipoUso,
+          chasis: data.vehiculo.chasis,
+        },
+        ...(data.seguro?.proveedor && data.seguro?.numeroPoliza ? {
+          seguro: {
+            proveedor: data.seguro.proveedor,
+            numeroPoliza: data.seguro.numeroPoliza,
+          }
+        } : {})
+      }
+    } />
   ) : null;
 
   const documentosContent = data ? (
-    <DocumentosConfirmationParaVerDetalles formData={data.documentos} />
+    <DocumentosConfirmationParaVerDetalles data={
+      {
+        solicitud: {
+          documentos: {
+            licencia: data.solicitud.documentos.licencia,
+            cedula: data.solicitud.documentos.cedula,
+            ...(data.solicitud.documentos.seguro ? { seguro: data.solicitud.documentos.seguro } : {}),
+            facturaVehiculo: data.solicitud.documentos.facturaVehiculo,
+          }
+        }
+      }
+    } />
   ) : null;
 
-  const handleStatusUpdate = async (status, comments) => {
-    try {
-      setProcessingStatus(true);
-      console.log('Updating status:', { status, comments, id: data.id });
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Refresh data if the function exists
-      if (refreshData) {
-        await refreshData();
-      }
-      
-      // Close modal immediately without delay
-      onClose();
-      
-      return true; // Return success
-    } catch (error) {
-      console.error('Error updating status:', error);
-      notification.error(
-        language === 'en' ? 'Error' : 'Error',
-        language === 'en' 
-          ? 'An error occurred while updating the status' 
-          : 'Ocurrió un error al actualizar el estado'
-      );
-      return false; // Return failure
-    } finally {
-      setProcessingStatus(false);
-    }
-  };
 
   // Use the appropriate detail component based on status
   const getEstadoContent = () => {
     if (!data) return null;
-    
-    if (isReviewMode && data.estado === REGISTRO_STATUS.PENDIENTE) {
+
+    if (isReviewMode && data.solicitud.estadoDecision === 'Pendiente') {
       // Show review form when in review mode and status is pending
       return (
-        <EstadoReview 
+        <EstadoReview
           data={data}
           isReviewMode={isReviewMode}
-          onApprove={async (comments) => {
-            await handleStatusUpdate('aprobado', comments);
+          onApprove={()=> {
+            notification.success(
+              language === 'en' ? 'Success' : 'Éxito',
+              language === 'en' ? 'Data refreshed successfully' : 'Datos actualizados exitosamente'
+            );
+            onClose();
+            refreshData();
           }}
-          onReject={async (comments) => {
-            await handleStatusUpdate('rechazado', comments);
+          onReject={() => {
+            notification.success(
+              language === 'en' ? 'Success' : 'Éxito',
+              language === 'en' ? 'Application rejected successfully' : 'Solicitud rechazada exitosamente'
+            );
+            onClose();
+            refreshData();
           }}
         />
       );
     } else {
       // Show appropriate detail view based on status
-      switch (data.estado) {
+      switch (mapEstadoToStatusTag(data.solicitud.estadoDecision)) {
         case REGISTRO_STATUS.APROBADO:
           return <DetalleAprobado data={data} />;
         case REGISTRO_STATUS.RECHAZADO:
-          return <DetalleRechazado data={data} />;
+          return <DetalleRechazado data={data} isCityzen={false} />;
         case REGISTRO_STATUS.PENDIENTE:
         default:
           return <DetallePendiente data={data} />;
       }
+    }
+  };
+
+  const mapEstadoToStatusTag = (estado) => {
+    switch (estado) {
+      case 'Aprobada':
+        return 'MOTO_APROBADA';
+      case 'Rechazada':
+        return 'MOTO_RECHAZADA';
+      case 'Pendiente':
+        return 'MOTO_PENDIENTE';
+      default:
+        return 'MOTO_PENDIENTE';
     }
   };
 
@@ -172,7 +216,7 @@ const ModalRevisionRegistro = ({
           <ModalTitle level={4}>
             {isReviewMode ? t.reviewApplication : t.viewDetails}
           </ModalTitle>
-          <StatusTag status={data.estado} />
+          <StatusTag status={mapEstadoToStatusTag(data.solicitud.estadoDecision)} />
         </TitleContainer>
 
         <TabsDeDetalles

@@ -1,6 +1,6 @@
 export const EMPLEADO_ROL = {
-  ADMIN: 'ADMIN',
-  AGENTE: 'EMPLEADO'
+  ADMIN: 'Administrador',
+  EMPLEADO: 'Empleado'
 };
 
 export const empleadosData = [

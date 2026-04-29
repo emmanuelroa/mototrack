@@ -12,12 +12,20 @@ const UsersContainer = styled(motion.div)`
   background-color: #000000;
   display: flex;
   flex-direction: column; 
+  
+  @media (max-width: 768px) {
+    padding-bottom: 2rem;
+  }
 `;
 
 const ContentWrapper = styled(motion.div)`
   display: flex;
   flex-direction: column;
   align-items: center;
+  
+  @media (max-width: 768px) {
+    padding: 0 0.5rem;
+  }
 `;
 
 // Animation variants - Optimized for faster appearance

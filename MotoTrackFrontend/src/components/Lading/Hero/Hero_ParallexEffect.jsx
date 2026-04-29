@@ -9,28 +9,28 @@ import FileAnimation from "../../../assets/Lading/Hero/file.json";
 import ReportAnimation from "../../../assets/Lading/Hero/Report V2.json";
 import SecurityAnimation from "../../../assets/Lading/Hero/Security.json";
 
-// Contenedor de 575 x 575 (antes era 650 x 650)
+// Update the Container styling
 const Container = styled.div`
   width: 100%;
   max-width: 575px;
   aspect-ratio: 1/1;
-  background-color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto;
   position: relative;
 
-  @media (max-width: 992px) {
-    max-width: 500px;
-  }
-
-  @media (max-width: 768px) {
-    max-width: 450px;
+  @media (max-width: 840px) {
+    max-width: 100%;
+    width: 100%;
+    aspect-ratio: auto;
+    height: 500px; // Increased from 400px
+    padding: 0;
+    margin: 0;
   }
 
   @media (max-width: 576px) {
-    max-width: 100%;
+    height: 400px; // Increased from 350px
   }
 `;
 
@@ -40,18 +40,23 @@ const MainContent = styled.main`
   position: relative;
 `;
 
-// Fondo que ocupa todo el contenedor y permite ver el overflow de los cards
+// Update the BackgroundContainer styling
 const BackgroundContainer = styled.div`
   width: 100%;
   height: 100%;
-  background-color: #f3f4f6;
-  border-radius: 0.5rem;
-  padding: 1rem;
   position: relative;
-  overflow: visible;
+  overflow: ${props => props.isMobile ? 'hidden' : 'visible'};
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
+
+  @media (max-width: 840px) {
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+    border-radius: 0;
+  }
 `;
 
 // Tarjeta compacta: ancho 200px, padding reducido
@@ -63,7 +68,7 @@ const Card = styled(motion.div)`
     0 4px 6px -2px rgba(0, 0, 0, 0.05);
   width: 200px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 840px) {
     width: 180px;
   }
 
@@ -86,7 +91,7 @@ const CircleCard = styled(motion.div)`
   overflow: hidden;
   padding: 0;
 
-  @media (max-width: 768px) {
+  @media (max-width: 840px) {
     width: 80px;
     height: 80px;
   }
@@ -181,19 +186,37 @@ const DetailValue = styled.span`
 
 // Imagen de fondo (ocupa todo el contenedor)
 const CenterImageContainer = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
-  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+
+  @media (max-width: 840px) {
+    position: relative;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+  }
 `;
 
 const HeroImage = styled.img`
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: cover; // Changed from contain to cover
   border-radius: 0.5rem;
+
+  @media (max-width: 840px) {
+    object-fit: cover; // Changed from contain to cover
+    border-radius: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  @media (max-width: 576px) {
+    border-radius: 0;
+  }
 `;
 
 function Hero_ParallexEffect() {
@@ -214,7 +237,7 @@ function Hero_ParallexEffect() {
 
   useEffect(() => {
     const checkSize = () => {
-      setIsMobile(window.innerWidth < 768);
+      setIsMobile(window.innerWidth < 840); // Cambiado de 768 a 840
     };
     
     checkSize(); // Verificar al inicio
@@ -225,7 +248,7 @@ function Hero_ParallexEffect() {
   // Ajustar la intensidad del efecto parallax según el tamaño de pantalla
   const getParallaxIntensity = () => {
     if (window.innerWidth < 576) return 0.5; // Menor intensidad en móviles
-    if (window.innerWidth < 992) return 0.7; // Intensidad media en tablets
+    if (window.innerWidth < 840) return 0.7; // Intensidad media en tablets
     return 1; // Intensidad completa en desktop
   };
 
@@ -259,180 +282,200 @@ function Hero_ParallexEffect() {
     }),
   };
 
+  // Update the shouldShowCard function
+  const shouldShowCard = (cardIndex, isMobile) => {
+    if (isMobile) {
+      return false; // Don't show any cards on mobile
+    }
+    return true;
+  };
+
   return (
     <Container>
       <MainContent>
-        <BackgroundContainer>
-          {/* ----- COL. IZQUIERDA (3 cards) ----- */}
-          {/* Card 1 (totalmente dentro) */}
-          <motion.div
-            style={{
-              position: "absolute",
-              top: isMobile ? "15%" : "100px", 
-              left: isMobile ? "5%" : "20px",
-              zIndex: 10,
-              x: regX,
-              y: regY,
-            }}
-            variants={fadeInVariants}
-            initial="hidden"
-            animate="visible"
-            custom={1}
-          >
-            <Card>
-              <FlexContainer>
+        <BackgroundContainer isMobile={isMobile}>
+          {/* The cards will not render on mobile due to shouldShowCard returning false */}
+          {/* Card 1 - Registration Status */}
+          {shouldShowCard(1, isMobile) && (
+            <motion.div
+              style={{
+                position: "absolute",
+                top: isMobile ? "15%" : "100px",
+                left: isMobile ? "5%" : "20px",
+                zIndex: 10,
+                x: regX,
+                y: regY,
+              }}
+              variants={fadeInVariants}
+              initial="hidden"
+              animate="visible"
+              custom={1}
+            >
+              <Card>
+                <FlexContainer>
+                  <IconWrapper style={{ width: "40px", height: "40px" }}>
+                    <Lottie 
+                      animationData={ReportAnimation} 
+                      loop={true}
+                      style={{ width: "100%", height: "100%" }}
+                    />
+                  </IconWrapper>
+                  <div>
+                    <Title>Estado de Registro</Title>
+                    <FlexContainer $gap="0.5rem" style={{ marginTop: "0.25rem" }}>
+                      <StatusDot />
+                      <SubText>Activo hasta 2025</SubText>
+                    </FlexContainer>
+                  </div>
+                </FlexContainer>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Card 2 - Renewal Date */}
+          {shouldShowCard(2, isMobile) && (
+            <motion.div
+              style={{
+                position: "absolute",
+                top: isMobile ? "40%" : "250px",
+                left: isMobile ? "-15%" : "-100px",
+                zIndex: 10,
+                x: renewalX,
+                y: renewalY,
+              }}
+              variants={fadeInVariants}
+              initial="hidden"
+              animate="visible"
+              custom={2}
+            >
+              <Card>
+                <FlexContainer>
+                  <IconWrapper style={{ width: "36px", height: "36px" }}>
+                    <Lottie 
+                      animationData={CalendarAnimation} 
+                      loop={true}
+                      style={{ width: "100%", height: "100%" }}
+                    />
+                  </IconWrapper>
+                  <div>
+                    <Title>Fecha de Renovación</Title>
+                    <SubText>15 Oct, 2025</SubText>
+                  </div>
+                </FlexContainer>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Circle Card */}
+          {shouldShowCard(3, isMobile) && (
+            <motion.div
+              style={{
+                position: "absolute",
+                top: isMobile ? "70%" : "400px",
+                left: isMobile ? "-20%" : "-150px",
+                zIndex: 10,
+                x: gpsX,
+                y: gpsY,
+              }}
+              variants={fadeInVariants}
+              initial="hidden"
+              animate="visible"
+              custom={3}
+            >
+              <CircleCard>
+                <Lottie 
+                  animationData={ShieldAnimation} 
+                  loop={true}
+                  style={{ width: 80, height: 80 }} // Reducido de 90px a 70px
+                />
+              </CircleCard>
+            </motion.div>
+          )}
+
+          {/* Card 4 - License Details */}
+          {shouldShowCard(4, isMobile) && (
+            <motion.div
+              style={{
+                position: "absolute",
+                top: isMobile ? "30%" : "200px",
+                right: isMobile ? "-15%" : "-100px",
+                zIndex: 10,
+                x: licenseX,
+                y: licenseY,
+              }}
+              variants={fadeInVariants}
+              initial="hidden"
+              animate="visible"
+              custom={4}
+            >
+              <Card>
+                <FlexContainer>
                 <IconWrapper style={{ width: "40px", height: "40px" }}>
-                  <Lottie 
-                    animationData={ReportAnimation} 
-                    loop={true}
-                    style={{ width: "100%", height: "100%" }}
-                  />
-                </IconWrapper>
-                <div>
-                  <Title>Estado de Registro</Title>
-                  <FlexContainer $gap="0.5rem" style={{ marginTop: "0.25rem" }}>
-                    <StatusDot />
-                    <SubText>Activo hasta 2025</SubText>
-                  </FlexContainer>
+                    <Lottie 
+                      animationData={FileAnimation} 
+                      loop={true}
+                      style={{ width: "100%", height: "100%" }}
+                    />
+                  </IconWrapper>
+                  <Title>Detalles de Licencia</Title>
+                </FlexContainer>
+                <div style={{ marginTop: "0.5rem" }}>
+                  <DetailRow>
+                    <DetailLabel>Placa:</DetailLabel>
+                    <DetailValue>ABC-123</DetailValue>
+                  </DetailRow>
+                  <DetailRow>
+                    <DetailLabel>Tipo:</DetailLabel>
+                    <DetailValue>Sport</DetailValue>
+                  </DetailRow>
                 </div>
-              </FlexContainer>
-            </Card>
-          </motion.div>
+              </Card>
+            </motion.div>
+          )}
 
-          {/* Card 2 (en el borde: medio dentro, medio fuera) */}
-          <motion.div
-            style={{
-              position: "absolute",
-              top: isMobile ? "40%" : "250px",
-              left: isMobile ? "-15%" : "-100px",
-              zIndex: 10,
-              x: renewalX,
-              y: renewalY,
-              display: window.innerWidth < 576 ? "none" : "block", // Ocultar en pantallas muy pequeñas
-            }}
-            variants={fadeInVariants}
-            initial="hidden"
-            animate="visible"
-            custom={2}
-          >
-            <Card>
-              <FlexContainer>
-                <IconWrapper style={{ width: "36px", height: "36px" }}>
-                  <Lottie 
-                    animationData={CalendarAnimation} 
-                    loop={true}
-                    style={{ width: "100%", height: "100%" }}
-                  />
-                </IconWrapper>
-                <div>
-                  <Title>Fecha de Renovación</Title>
-                  <SubText>15 Oct, 2025</SubText>
-                </div>
-              </FlexContainer>
-            </Card>
-          </motion.div>
+          {/* Card 5 - Security Protection */}
+          {shouldShowCard(5, isMobile) && (
+            <motion.div
+              style={{
+                position: "absolute",
+                bottom: isMobile ? "10%" : "50px",
+                right: isMobile ? "5%" : "20px",
+                zIndex: 10,
+                x: securityX,
+                y: securityY,
+              }}
+              variants={fadeInVariants}
+              initial="hidden"
+              animate="visible"
+              custom={5}
+            >
+              <Card>
+                <FlexContainer>
+                  <IconWrapper style={{ width: "48px", height: "48px" }}> {/* Increased from 36px to 48px */}
+                    <Lottie 
+                      animationData={SecurityAnimation} 
+                      loop={true}
+                      style={{ width: "100%", height: "100%" }}
+                    />
+                  </IconWrapper>
+                  <div>
+                    <Title>Protección de Seguridad</Title>
+                    <SubText>Activa hasta 2025</SubText>
+                  </div>
+                </FlexContainer>
+              </Card>
+            </motion.div>
+          )}
 
-          {/* Implementamos la tarjeta circular con animación Lottie */}
-          <motion.div
-            style={{
-              position: "absolute",
-              top: isMobile ? "70%" : "400px",
-              left: isMobile ? "-20%" : "-150px",
-              zIndex: 10,
-              x: gpsX,
-              y: gpsY,
-              display: window.innerWidth < 576 ? "none" : "block", // Ocultar en pantallas muy pequeñas
-            }}
-            variants={fadeInVariants}
-            initial="hidden"
-            animate="visible"
-            custom={3}
-          >
-            <CircleCard>
-              <Lottie 
-                animationData={ShieldAnimation} 
-                loop={true}
-                style={{ width: 80, height: 80 }} // Reducido de 90px a 70px
-              />
-            </CircleCard>
-          </motion.div>
-
-          {/* ----- COL. DERECHA (2 cards) ----- */}
-          {/* Card 4 (adelantado: saliendo por la derecha) */}
-          <motion.div
-            style={{
-              position: "absolute",
-              top: isMobile ? "30%" : "200px",
-              right: isMobile ? "-15%" : "-100px",
-              zIndex: 10,
-              x: licenseX,
-              y: licenseY,
-              display: window.innerWidth < 576 ? "none" : "block", // Ocultar en pantallas muy pequeñas
-            }}
-            variants={fadeInVariants}
-            initial="hidden"
-            animate="visible"
-            custom={4}
-          >
-            <Card>
-              <FlexContainer>
-              <IconWrapper style={{ width: "40px", height: "40px" }}>
-                  <Lottie 
-                    animationData={FileAnimation} 
-                    loop={true}
-                    style={{ width: "100%", height: "100%" }}
-                  />
-                </IconWrapper>
-                <Title>Detalles de Licencia</Title>
-              </FlexContainer>
-              <div style={{ marginTop: "0.5rem" }}>
-                <DetailRow>
-                  <DetailLabel>Placa:</DetailLabel>
-                  <DetailValue>ABC-123</DetailValue>
-                </DetailRow>
-                <DetailRow>
-                  <DetailLabel>Tipo:</DetailLabel>
-                  <DetailValue>Sport</DetailValue>
-                </DetailRow>
-              </div>
-            </Card>
-          </motion.div>
-
-          {/* Card 5 - Protección de Seguridad con Security.json */}
-          <motion.div
-            style={{
-              position: "absolute",
-              bottom: isMobile ? "10%" : "50px",
-              right: isMobile ? "5%" : "20px",
-              zIndex: 10,
-              x: securityX,
-              y: securityY,
-            }}
-            variants={fadeInVariants}
-            initial="hidden"
-            animate="visible"
-            custom={5}
-          >
-            <Card>
-              <FlexContainer>
-                <IconWrapper style={{ width: "48px", height: "48px" }}> {/* Increased from 36px to 48px */}
-                  <Lottie 
-                    animationData={SecurityAnimation} 
-                    loop={true}
-                    style={{ width: "100%", height: "100%" }}
-                  />
-                </IconWrapper>
-                <div>
-                  <Title>Protección de Seguridad</Title>
-                  <SubText>Activa hasta 2025</SubText>
-                </div>
-              </FlexContainer>
-            </Card>
-          </motion.div>
-
-          {/* Imagen de fondo */}
+          {/* Background Image - always visible */}
           <CenterImageContainer>
-            <HeroImage src={HeroImg} alt="Motorcycle tracking system" />
+            <HeroImage 
+              src={HeroImg} 
+              alt="Motorcycle tracking system"
+              style={{
+                borderRadius: isMobile ? '0.75rem' : '0.5rem'
+              }}
+            />
           </CenterImageContainer>
         </BackgroundContainer>
       </MainContent>

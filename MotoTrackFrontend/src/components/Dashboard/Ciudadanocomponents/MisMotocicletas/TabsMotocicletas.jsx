@@ -62,10 +62,17 @@ const MotorcycleTabs = styled(Tabs)`
  * TabsMotocicletas - Component for displaying tabs of different motorcycle statuses
  */
 const TabsMotocicletas = ({ 
-  activeComponent,
-  pendingComponent,
-  rejectedComponent
+  activeComponent, 
+  pendingComponent, 
+  rejectedComponent,
+  onTabChange 
 }) => {
+  const handleTabChange = (key) => {
+    if (onTabChange) {
+      onTabChange(key);
+    }
+  };
+
   const [activeTab, setActiveTab] = useState("1");
   const { language } = useLanguage();
   
@@ -124,7 +131,10 @@ const TabsMotocicletas = ({
   return (
     <MotorcycleTabs
       activeKey={activeTab}
-      onChange={setActiveTab}
+      onChange={(key) => {
+        setActiveTab(key);
+        handleTabChange(key);
+      }}
       items={items}
       mobileWrap={false}
       tabBarGutter={2}

@@ -48,6 +48,10 @@ const translations = {
 // Estilos globales para notificaciones basados en el theme
 const NotificationGlobalStyle = createGlobalStyle`
   /* Base styles for all notifications */
+  .ant-notification {
+    z-index: 5000 !important; /* Asegúrate de que sea mayor que el z-index de cualquier modal */
+  }
+
   .ant-notification-notice {
     background-color: ${props => props.theme.token.sidebarBg} !important;
     border-radius: 8px;
@@ -99,7 +103,7 @@ const NotificationContext = createContext(null);
 const defaultConfig = {
   placement: 'topRight',
   duration: 4.5,
-  
+  zIndex: 5000, // Asegúrate de que sea mayor que el z-index de cualquier modal
 };
 
 /**
@@ -128,94 +132,43 @@ export const NotificationProvider = ({ children }) => {
   // Notification functions with theme and language support
   const notificationFunctions = {
     success: (title, description, config = {}) => {
-      console.log('SUCCESS NOTIFICATION TRIGGERED:', { title, description, config });
-      const defaultTitle = getTranslation('success', 'defaultTitle', 'Success');
-      const defaultDesc = getTranslation('success', 'defaultDescription', '');
-      
-      // Handle both object and string parameters
-      if (typeof title === 'object') {
-        console.log('Calling notification.success with object config');
-        notification.success({
-          ...defaultConfig,
-          ...title,
-          className: `notification-success ${currentTheme === 'themeDark' ? 'dark-theme' : 'light-theme'}`,
-        });
-      } else {
-        console.log('Calling notification.success with individual params');
-        notification.success({
-          message: title || defaultTitle,
-          description: description || defaultDesc,
-          ...defaultConfig,
-          ...config,
-          className: `notification-success ${currentTheme === 'themeDark' ? 'dark-theme' : 'light-theme'}`,
-        });
-      }
+      notification.success({
+        message: title || getTranslation('success', 'defaultTitle', 'Success'),
+        description: description || getTranslation('success', 'defaultDescription', ''),
+        ...defaultConfig,
+        ...config,
+        className: `notification-success ${currentTheme === 'themeDark' ? 'dark-theme' : 'light-theme'}`,
+      });
     },
 
     error: (title, description, config = {}) => {
-      console.log('ERROR NOTIFICATION TRIGGERED:', { title, description, config });
-      const defaultTitle = getTranslation('error', 'defaultTitle', 'Error');
-      const defaultDesc = getTranslation('error', 'defaultDescription', '');
-      
-      if (typeof title === 'object') {
-        console.log('Calling notification.error with object config');
-        notification.error({
-          ...defaultConfig,
-          ...title,
-          className: `notification-error ${currentTheme === 'themeDark' ? 'dark-theme' : 'light-theme'}`,
-        });
-      } else {
-        console.log('Calling notification.error with individual params');
-        notification.error({
-          message: title || defaultTitle,
-          description: description || defaultDesc,
-          ...defaultConfig,
-          ...config,
-          className: `notification-error ${currentTheme === 'themeDark' ? 'dark-theme' : 'light-theme'}`,
-        });
-      }
+      notification.error({
+        message: title || getTranslation('error', 'defaultTitle', 'Error'),
+        description: description || getTranslation('error', 'defaultDescription', ''),
+        ...defaultConfig,
+        ...config,
+        className: `notification-error ${currentTheme === 'themeDark' ? 'dark-theme' : 'light-theme'}`,
+      });
     },
 
     warning: (title, description, config = {}) => {
-      const defaultTitle = getTranslation('warning', 'defaultTitle', 'Warning');
-      const defaultDesc = getTranslation('warning', 'defaultDescription', '');
-      
-      if (typeof title === 'object') {
-        notification.warning({
-          ...defaultConfig,
-          ...title,
-          className: `notification-warning ${currentTheme === 'themeDark' ? 'dark-theme' : 'light-theme'}`,
-        });
-      } else {
-        notification.warning({
-          message: title || defaultTitle,
-          description: description || defaultDesc,
-          ...defaultConfig,
-          ...config,
-          className: `notification-warning ${currentTheme === 'themeDark' ? 'dark-theme' : 'light-theme'}`,
-        });
-      }
+      notification.warning({
+        message: title || getTranslation('warning', 'defaultTitle', 'Warning'),
+        description: description || getTranslation('warning', 'defaultDescription', ''),
+        ...defaultConfig,
+        ...config,
+        className: `notification-warning ${currentTheme === 'themeDark' ? 'dark-theme' : 'light-theme'}`,
+      });
     },
 
     info: (title, description, config = {}) => {
-      const defaultTitle = getTranslation('info', 'defaultTitle', 'Information');
-      const defaultDesc = getTranslation('info', 'defaultDescription', '');
-      
-      if (typeof title === 'object') {
-        notification.info({
-          ...defaultConfig,
-          ...title,
-          className: `notification-info ${currentTheme === 'themeDark' ? 'dark-theme' : 'light-theme'}`,
-        });
-      } else {
-        notification.info({
-          message: title || defaultTitle,
-          description: description || defaultDesc,
-          ...defaultConfig,
-          ...config,
-          className: `notification-info ${currentTheme === 'themeDark' ? 'dark-theme' : 'light-theme'}`,
-        });
-      }
+      notification.info({
+        message: title || getTranslation('info', 'defaultTitle', 'Information'),
+        description: description || getTranslation('info', 'defaultDescription', ''),
+        ...defaultConfig,
+        ...config,
+        className: `notification-info ${currentTheme === 'themeDark' ? 'dark-theme' : 'light-theme'}`,
+      });
     },
 
     // For compatibility
@@ -250,7 +203,6 @@ export const useNotification = () => {
     console.error('useNotification called outside NotificationProvider');
     throw new Error('useNotification must be used within a NotificationProvider');
   }
-  console.log('useNotification hook used, context exists:', !!notificationContext);
   return notificationContext;
 };
 

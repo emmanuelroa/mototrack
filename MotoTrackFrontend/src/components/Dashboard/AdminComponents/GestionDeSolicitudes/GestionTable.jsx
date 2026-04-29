@@ -20,7 +20,8 @@ import ModalRevisionRegistro from './VerDetalles/ModalRevisionRegistro';
 import DescargarCarnet from '../../CommonComponts/DescargarCarnet';
 import { formatDate } from '../../../../utils/dateUtils';
 import { useNotification } from '../../CommonComponts/ToastNotifications';
-
+import { useAuth } from '../../../../context/AuthContext';
+import axios from 'axios';
 const { Option } = Select;
 
 // Helper function to convert hex to rgba
@@ -41,7 +42,15 @@ const TableContainer = styled.div`
   margin-bottom: 24px;
   border: 1px solid ${props => props.theme.token.titleColor}25;
   position: relative;
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+ 
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 `;
 
 // Actualizar el estilo del TableTitle para que se vea bien fuera del contenedor
@@ -119,6 +128,30 @@ const StyledTable = styled(Table)`
   // Fix dropdown text in dark mode (for filters)
   .ant-dropdown-menu-item {
     color: ${props => props.theme?.token?.titleColor || 'inherit'};
+  }
+
+  @media (max-width: 768px) {
+    .ant-table {
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .ant-table-thead > tr > th,
+    .ant-table-tbody > tr > td {
+      white-space: nowrap;
+      padding: 12px 8px;
+    }
+
+    .ant-space {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      
+      button {
+        width: 100%;
+        margin: 0;
+      }
+    }
   }
 `;
 
@@ -265,7 +298,7 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
-function GestionTable({ solicitudesData = [], onView, onAssign, onTableReady }) {
+function GestionTable({ solicitudesData = [], onView, onAssign, onTableReady, onRefresh }) {
   const { primaryColor } = usePrimaryColor();
   const { language } = useLanguage();
   const theme = useTheme();
@@ -273,23 +306,50 @@ function GestionTable({ solicitudesData = [], onView, onAssign, onTableReady }) 
   const [assignModalVisible, setAssignModalVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [employeeData, setEmployeeData] = useState(null);
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [data, setData] = useState([]);
   const notification = useNotification();
 
-  // Active employees list for assignment - Filter out property owners
-  const activeEmployees = empleadosData.filter(emp => 
-    emp.estado === 'ACTIVO' && 
-    emp.role !== 'PROPIETARIO' && 
-    emp.role !== 'OWNER' && 
-    emp.type !== 'PROPIETARIO'
-  );
+  const api_url = import.meta.env.VITE_API_URL;
+  const { getAccessToken } = useAuth();
+  useEffect(() => {
+    const fetchEmployee = async () => {
+      try {
+        const response = await axios.get(`${api_url}/api/availableEmployees`, {
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+        });
+        if (response.data.success === true) {
+          const empleadosData = response.data;
+          setEmployeeData(empleadosData.data);
+        }
+      } catch (error) {
+        console.error('Error fetching employees:', error);
+        notification.error({
+          message: language === 'es' ? 'Error' : 'Error',
+          description: language === 'es' 
+            ? 'Error al obtener empleados' 
+            : 'Error fetching employees'
+        });
+      }
+    };
+    fetchEmployee();
+  }, []);
 
   useEffect(() => {
-    if (solicitudesData && solicitudesData.length > 0) {
+    if (Array.isArray(solicitudesData)) {
       setData(solicitudesData);
     }
   }, [solicitudesData]);
+
+  // Agrega este useEffect para manejar el valor inicial
+  useEffect(() => {
+    if (assignModalVisible && selectedRecord?.empleado) {
+      setSelectedEmployee(selectedRecord.empleado);
+    }
+  }, [assignModalVisible, selectedRecord]);
 
   // Create a lighter shade for gradient
   const getPrimaryColorLight = (hexColor) => {
@@ -321,32 +381,15 @@ function GestionTable({ solicitudesData = [], onView, onAssign, onTableReady }) 
   // Map REGISTRO_STATUS to MOTO_STATUS for StatusTag
   const mapStatusToMotoStatus = (status) => {
     switch (status) {
-      case REGISTRO_STATUS.APROBADO:
+      case 'Aprobada':
         return MOTO_STATUS.APROBADA;
-      case REGISTRO_STATUS.PENDIENTE:
+      case 'Pendiente':
         return MOTO_STATUS.PENDIENTE;
-      case REGISTRO_STATUS.RECHAZADO:
+      case 'Rechazada':
         return MOTO_STATUS.RECHAZADA;
       default:
         return MOTO_STATUS.PENDIENTE;
     }
-  };
-
-  // Add this function after the mapStatusToMotoStatus function
-
-  // Prepare carnet data from registration record
-  const prepareCarnetData = (record) => {
-    const aprobacionDetalles = record.aprobacionDetalles || {};
-    const datosPersonales = record.datosPersonales || {};
-    const datosMotocicleta = record.datosMotocicleta || {};
-    
-    return {
-      placa: aprobacionDetalles.numeroPlacaAsignado || datosMotocicleta.placa || '',
-      propietario: datosPersonales.nombreCompleto || '',
-      modelo: `${datosMotocicleta.marca || ''} ${datosMotocicleta.modelo || ''} (${datosMotocicleta.año || ''})`,
-      chasis: datosMotocicleta.numeroChasis || '',
-      fechaEmision: formatDate(aprobacionDetalles.fechaAprobacion) || formatDate(new Date().toISOString())
-    };
   };
 
   // Table column translations
@@ -412,9 +455,7 @@ function GestionTable({ solicitudesData = [], onView, onAssign, onTableReady }) 
   const t = tableTranslations[language] || tableTranslations.es;
 
   // Handler functions for row actions
-  const handleView = (record, reviewMode = false, showingModalInternally = true) => {
-    console.log("Opening modal with review mode:", reviewMode);
-    
+  const handleView = (record, reviewMode = false, showingModalInternally = true) => {    
     // Only show notification if NOT showing modal internally
     if (!showingModalInternally) {
       notification.info(
@@ -433,31 +474,24 @@ function GestionTable({ solicitudesData = [], onView, onAssign, onTableReady }) 
 
   const handleAssign = (record) => {
     setSelectedRecord(record);
-    setSelectedEmployee(null);
+    setSelectedEmployee(record);
     setAssignModalVisible(true);
   };
 
-  const confirmAssignment = () => {
-    if (selectedEmployee && selectedRecord && onAssign) {
-      // Find the full employee data
-      const employeeData = empleadosData.find(emp => emp.id === selectedEmployee);
-      if (employeeData) {
-        const assignedEmployee = {
-          id: employeeData.id,
-          nombre: `${employeeData.nombres} ${employeeData.apellidos}`,
-          avatar: employeeData.avatar || null
-        };
-        
-        onAssign(selectedRecord, assignedEmployee);
-        
-        notification.success(
-          t.asignacionExitosa,
-          t.solicitudAsignada
-        );
-      }
-    }
-    closeAssignModal();
-  };
+  // Actualiza la función confirmAssignment
+const confirmAssignment = async () => {
+  if (selectedEmployee && selectedRecord && onAssign) {
+    // Asegúrate de que la estructura del empleado sea correcta
+    const assignedEmployee = {
+      id: selectedEmployee.idPersona, // Usa el ID directamente del empleado seleccionado
+      nombres: selectedEmployee.nombres,
+      apellidos: selectedEmployee.apellidos
+    };
+    
+    onAssign(selectedRecord, assignedEmployee);
+  }
+  closeAssignModal();
+};
 
   const closeAssignModal = () => {
     setAssignModalVisible(false);
@@ -469,12 +503,14 @@ function GestionTable({ solicitudesData = [], onView, onAssign, onTableReady }) 
     setModalVisible(false);
     setSelectedRecord(null);
     setIsReviewMode(false);
+    if (onRefresh) {
+      onRefresh();
+    }
   };
 
   // Add refreshData function
   const refreshData = async () => {
     try {
-      // In a real app, this would be an API call to fetch fresh data
       await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
       
       // Update the data state with fresh data
@@ -486,107 +522,89 @@ function GestionTable({ solicitudesData = [], onView, onAssign, onTableReady }) 
       handleModalClose();
       
       // Show success notification
-      notification.success(
-        language === 'en' ? 'Updated' : 'Actualizado',
-        language === 'en' ? 'The data has been updated successfully' : 'Los datos han sido actualizados correctamente'
-      );
+      notification.success({
+        message: language === 'es' ? 'Actualizado' : 'Updated',
+        description: language === 'es' 
+          ? 'Los datos han sido actualizados correctamente' 
+          : 'The data has been updated successfully'
+      });
     } catch (error) {
       console.error('Error refreshing data:', error);
-      notification.error(
-        language === 'en' ? 'Error' : 'Error',
-        language === 'en' ? 'An error occurred while updating the data' : 'Ocurrió un error al actualizar los datos'
-      );
+      notification.error({
+        message: language === 'es' ? 'Error' : 'Error',
+        description: language === 'es' 
+          ? 'Ocurrió un error al actualizar los datos' 
+          : 'An error occurred while updating the data'
+      });
     }
   };
 
   const columns = useMemo(() => [
     {
       title: t.id,
-      dataIndex: 'id',
+      dataIndex: ['solicitud', 'idSolicitud'],
       key: 'id',
-      sorter: (a, b) => a.id - b.id,
+      sorter: (a, b) => a.solicitud.idSolicitud - b.solicitud.idSolicitud,
       width: '5%',
     },
     {
       title: t.propietario,
-      dataIndex: ['datosPersonales', 'nombreCompleto'],
       key: 'propietario',
-      render: (text) => text || 'N/A',
-      sorter: (a, b) => a.datosPersonales.nombreCompleto.localeCompare(b.datosPersonales.nombreCompleto),
+      render: (_, record) => `${record.ciudadano.nombres} ${record.ciudadano.apellidos}`,
+      sorter: (a, b) => `${a.ciudadano.nombres} ${a.ciudadano.apellidos}`
+        .localeCompare(`${b.ciudadano.nombres} ${b.ciudadano.apellidos}`),
       width: '20%',
     },
     {
       title: t.marca,
-      dataIndex: ['datosMotocicleta', 'marca'],
+      dataIndex: ['vehiculo', 'marca', 'nombre'],
       key: 'marca',
-      sorter: (a, b) => a.datosMotocicleta.marca.localeCompare(b.datosMotocicleta.marca),
+      sorter: (a, b) => a.vehiculo.marca.nombre.localeCompare(b.vehiculo.marca.nombre),
       width: '10%',
     },
     {
       title: t.modelo,
-      dataIndex: ['datosMotocicleta', 'modelo'],
+      dataIndex: ['vehiculo', 'modelo', 'nombre'],
       key: 'modelo',
-      sorter: (a, b) => a.datosMotocicleta.modelo.localeCompare(b.datosMotocicleta.modelo),
+      sorter: (a, b) => a.vehiculo.modelo.nombre.localeCompare(b.vehiculo.modelo.nombre),
       width: '10%',
     },
     {
       title: t.fecha,
-      dataIndex: 'fechaSolicitud',
+      dataIndex: ['solicitud', 'fechaRegistro'],
       key: 'fecha',
       render: (text) => formatTableDate(text),
-      sorter: (a, b) => new Date(a.fechaSolicitud) - new Date(b.fechaSolicitud),
+      sorter: (a, b) => new Date(a.solicitud.fechaRegistro) - new Date(b.solicitud.fechaRegistro),
       width: '12%',
     },
     {
       title: t.estado,
-      dataIndex: 'estado',
+      dataIndex: ['solicitud', 'estadoDecision'],
       key: 'estado',
-      render: (status) => {
-        const motoStatus = mapStatusToMotoStatus(status);
-        return <StatusTag status={motoStatus} />;
-      },
+      render: (status) => <StatusTag status={mapStatusToMotoStatus(status)} />,
       filters: [
-        { text: t.aprobado, value: REGISTRO_STATUS.APROBADO },
-        { text: t.pendiente, value: REGISTRO_STATUS.PENDIENTE },
-        { text: t.rechazado, value: REGISTRO_STATUS.RECHAZADO },
+        { text: t.aprobado, value: 'Aprobada' },
+        { text: t.pendiente, value: 'Pendiente' },
+        { text: t.rechazado, value: 'Rechazada' },
       ],
-      onFilter: (value, record) => record.estado === value,
+      onFilter: (value, record) => record.solicitud.estadoDecision === value,
       width: '12%',
     },
     {
       title: t.asignado,
-      dataIndex: 'asignadoA',
-      key: 'asignado',
-      // Use a dash when not assigned
-      render: (asignado) => (
-        asignado ? asignado.nombre : "-"
-      ),
+      dataIndex: 'empleado',
+      key: 'empleado',
+      render: (empleado) => empleado ? `${empleado.nombres} ${empleado.apellidos}` : "-",
       width: '15%',
     },
     {
       title: t.acciones,
       key: 'acciones',
       render: (_, record) => {
+        const estado = record.solicitud.estadoDecision;
+        
         // Para solicitudes pendientes
-        if (record.estado === REGISTRO_STATUS.PENDIENTE) {
-          // Si no está asignada, mostrar ver y asignar
-          if (!record.asignadoA) {
-            return (
-              <ButtonContainer>
-                <Tooltip title={t.verDetalles}>
-                  <SecondaryButton onClick={() => handleView(record, false)}>
-                    {t.ver}
-                  </SecondaryButton>
-                </Tooltip>
-                <Tooltip title={t.asignarEmpleado}>
-                  <MainButton onClick={() => handleAssign(record)} icon={<UserSwitchOutlined />}>
-                    {t.asignar}
-                  </MainButton>
-                </Tooltip>
-              </ButtonContainer>
-            );
-          }
-          // Si ya está asignada, mostrar ver y revisar
+        if (estado === 'Pendiente') {
           return (
             <ButtonContainer>
               <Tooltip title={t.verDetalles}>
@@ -594,17 +612,17 @@ function GestionTable({ solicitudesData = [], onView, onAssign, onTableReady }) 
                   {t.ver}
                 </SecondaryButton>
               </Tooltip>
-              <Tooltip title={t.revisar}>
-                <MainButton onClick={() => handleView(record, true)} icon={<FileOutlined />}>
-                  {t.revisar}
+              <Tooltip title={t.asignarEmpleado}>
+                <MainButton onClick={() => handleAssign(record)} icon={<UserSwitchOutlined />}>
+                  {t.asignar}
                 </MainButton>
               </Tooltip>
             </ButtonContainer>
           );
         }
         
-        // Para solicitudes aprobadas, mostrar ver detalles y descargar carnet
-        if (record.estado === REGISTRO_STATUS.APROBADO) {
+        // Para solicitudes aprobadas
+        if (estado === 'Aprobada') {
           return (
             <ButtonContainer>
               <Tooltip title={t.verDetalles}>
@@ -614,18 +632,15 @@ function GestionTable({ solicitudesData = [], onView, onAssign, onTableReady }) 
               </Tooltip>
               <Tooltip title={t.descargarCarnet}>
                 <DescargarCarnet
-                  motorcycleData={prepareCarnetData(record)}
-                  showPreview={false}
-                  buttonProps={{
-                    onClick: () => {
-                      notification.success(
-                        language === 'en' ? 'Card Generated' : 'Carnet Generado',
-                        language === 'en' ? 'The motorcycle card has been successfully generated' : 'El carnet de motocicleta ha sido generado exitosamente'
-                      );
-                      // Call the original handler if needed
-                      if (onAssign) onAssign(record);
-                    }
+                  motorcycleData={{
+                    placa: record.matricula?.matriculaGenerada,
+                    propietario: `${record.ciudadano.nombres} ${record.ciudadano.apellidos}`,
+                    modelo: `${record.vehiculo.marca.nombre} ${record.vehiculo.modelo.nombre} (${record.vehiculo.año})`,
+                    chasis: record.vehiculo.chasis,
+                    fechaEmision: record.matricula?.fechaEmision,
+                    registro: record.solicitud.idSolicitud
                   }}
+                  showPreview={false}
                 >
                   <MainButton icon={<DownloadOutlined />}>
                     {t.descargarCarnet}
@@ -636,7 +651,7 @@ function GestionTable({ solicitudesData = [], onView, onAssign, onTableReady }) 
           );
         }
         
-        // Para solicitudes rechazadas, solo mostrar ver detalles
+        // Para solicitudes rechazadas
         return (
           <ButtonContainer>
             <Tooltip title={t.verDetalles}>
@@ -650,7 +665,7 @@ function GestionTable({ solicitudesData = [], onView, onAssign, onTableReady }) 
       width: '16%',
       align: 'center',
     },
-  ], [t, primaryColor, language]); 
+  ], [t, language, handleView, handleAssign]);
 
   // Make a ref to keep track if we've already sent the columns
   const columnsSentRef = useRef(false);
@@ -665,15 +680,14 @@ function GestionTable({ solicitudesData = [], onView, onAssign, onTableReady }) 
     }
   }, [columns, onTableReady]);
 
+
   return (
     <>
       <GlobalStyle theme={theme} $primaryColor={primaryColor} />
-      {/* Título fuera del contenedor */}
       <TableTitle $primaryColor={primaryColor}>
         <h3>{t.gestionSolicitudes}</h3>
       </TableTitle>
       
-      {/* Contenedor de la tabla sin el título */}
       <TableContainer>
         <StyledTable
           $primaryColor={primaryColor}
@@ -695,12 +709,10 @@ function GestionTable({ solicitudesData = [], onView, onAssign, onTableReady }) 
             data={selectedRecord}
             isReviewMode={isReviewMode}
             refreshData={refreshData}
-            // Add high z-index to ensure modal appears above everything
             zIndex={9999}
           />
         )}
 
-        {/* Employee Assignment Modal - Using our custom Modal component */}
         <Modal
           show={assignModalVisible}
           onClose={closeAssignModal}
@@ -716,18 +728,23 @@ function GestionTable({ solicitudesData = [], onView, onAssign, onTableReady }) 
               <Select
                 className="select-employee"
                 placeholder={t.seleccionarEmpleado}
-                value={selectedEmployee}
-                onChange={value => setSelectedEmployee(value)}
+                onChange={(value) => {
+                  // Encuentra el empleado seleccionado
+                  const employee = employeeData?.find(emp => emp.datosPersonales.idPersona === value);
+                  setSelectedEmployee(employee);
+                }}
                 style={{ width: '100%' }}
                 popupClassName="custom-dark-select-dropdown"
                 dropdownStyle={{
                   backgroundColor: theme?.token?.contentBg,
                 }}
+                value={selectedEmployee?.idPersona}
+                defaultValue={selectedRecord?.empleado?.idPersona}
               >
-                {activeEmployees.map(employee => (
+                {employeeData && employeeData.map(employee => (
                   <Option 
-                    key={employee.id} 
-                    value={employee.id}
+                    key={employee.datosPersonales.idPersona} 
+                    value={employee.datosPersonales.idPersona}
                   >
                     {`${employee.nombres} ${employee.apellidos}`}
                   </Option>

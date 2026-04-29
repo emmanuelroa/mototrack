@@ -408,7 +408,7 @@ export default function DocumentosConfirmation({ formData, documentos }) {
   const getDocumentData = () => {
     // If documentos array is provided (viewing details case)
     if (documentos && Array.isArray(documentos)) {
-      return [
+      const docs = [
         {
           id: 1,
           title: t.license.title,
@@ -421,20 +421,29 @@ export default function DocumentosConfirmation({ formData, documentos }) {
           icon: <IdcardOutlined />,
           filePath: documentos.find(doc => doc.tipo === "Licencia de Conducir")?.url || '',
           useSidebarBg: true
-        },
-        {
+        }
+      ];
+
+      // Only add insurance if it exists in documentos
+      const insuranceDoc = documentos.find(doc => doc.tipo === "Póliza de Seguro");
+      if (insuranceDoc?.url) {
+        docs.push({
           id: 2,
           title: t.insurance.title,
-          fileName: documentos.find(doc => doc.tipo === "Póliza de Seguro")?.archivo || t.insurance.fileName,
+          fileName: insuranceDoc.archivo || t.insurance.fileName,
           description: t.insurance.description,
-          fileType: getFileType(documentos.find(doc => doc.tipo === "Póliza de Seguro")?.archivo || ""),
+          fileType: getFileType(insuranceDoc.archivo || ""),
           iconColor: "#52c41a",
           bgColor: "#52c41a",
           iconBgColor: "#f6ffed",
           icon: <SafetyCertificateOutlined />,
-          filePath: documentos.find(doc => doc.tipo === "Póliza de Seguro")?.url || '',
+          filePath: insuranceDoc.url,
           useSidebarBg: false
-        },
+        });
+      }
+
+      // Add remaining documents
+      docs.push(
         {
           id: 3,
           title: t.id.title,
@@ -461,11 +470,13 @@ export default function DocumentosConfirmation({ formData, documentos }) {
           filePath: documentos.find(doc => doc.tipo === "Factura de Compra")?.url || '',
           useSidebarBg: false
         }
-      ];
+      );
+
+      return docs;
     }
 
-    // If formData is provided (registration confirmation case) or fallback
-    return [
+    // If formData is provided (registration confirmation case)
+    const docs = [
       {
         id: 1,
         title: t.license.title,
@@ -478,20 +489,28 @@ export default function DocumentosConfirmation({ formData, documentos }) {
         icon: <IdcardOutlined />,
         filePath: formData?.driverLicenseURL || '',
         useSidebarBg: true
-      },
-      {
+      }
+    ];
+
+    // Only add insurance if URL exists
+    if (formData?.vehicleInsuranceURL) {
+      docs.push({
         id: 2,
         title: t.insurance.title,
-        fileName: formData?.vehicleInsuranceName || t.insurance.fileName,
+        fileName: formData.vehicleInsuranceName || t.insurance.fileName,
         description: t.insurance.description,
-        fileType: (formData?.vehicleInsuranceType || "PDF").toUpperCase(),
+        fileType: (formData.vehicleInsuranceType || "PDF").toUpperCase(),
         iconColor: "#52c41a",
         bgColor: "#52c41a",
         iconBgColor: "#f6ffed",
         icon: <SafetyCertificateOutlined />,
-        filePath: formData?.vehicleInsuranceURL || '',
+        filePath: formData.vehicleInsuranceURL,
         useSidebarBg: false
-      },
+      });
+    }
+
+    // Add remaining documents
+    docs.push(
       {
         id: 3,
         title: t.id.title,
@@ -518,7 +537,9 @@ export default function DocumentosConfirmation({ formData, documentos }) {
         filePath: formData?.motorInvoiceURL || '',
         useSidebarBg: false
       }
-    ];
+    );
+
+    return docs;
   };
   
   // Helper function to extract file type from filename

@@ -5,12 +5,13 @@ import MainButton from '../../../CommonComponts/MainButton';
 import SecondaryButton from '../../../CommonComponts/SecondaryButton';
 import { useNotification } from '../../../CommonComponts/ToastNotifications';
 import styled from 'styled-components';
-import { Typography, Form } from 'antd';
+import { Typography, Form, Spin } from 'antd';
 import { EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
 import { useTheme } from '../../../../../context/ThemeContext';
 import { useLanguage } from '../../../../../context/LanguageContext';
 import { passwordChangeTranslations } from '../../../../../utils/Modals/CambiarContraseñas';
 import { useAuth } from '../../../../../context/AuthContext';
+import axios from 'axios';
 
 const { Title } = Typography;
 
@@ -97,11 +98,12 @@ const CambiarMiContraseña = ({ show, onClose }) => {
   const [form] = Form.useForm();
   const { theme } = useTheme();
   const { language } = useLanguage();
-  const { updatePassword } = useAuth();
+  const { fetchUser, getAccessToken } = useAuth();
   const notification = useNotification();
   const translations = passwordChangeTranslations[language];
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const apiUrl = import.meta.env.VITE_API_URL;
+
   // Password visibility states
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -126,22 +128,37 @@ const CambiarMiContraseña = ({ show, onClose }) => {
     
     setIsSubmitting(true);
     try {
-      // Call your API to change the password
-      await updatePassword(values.currentPassword, values.newPassword);
-      
-      // Show success notification
-      notification.success(
-        translations.success.title, 
-        translations.success.description
+      const response = await axios.put(
+        `${apiUrl}/api/changePassword`,
+        {
+          currentPassword: values.currentPassword,
+          newPassword: values.newPassword,
+          confirmPassword: values.confirmPassword,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+        }
       );
-      
-      // Close the modal
+
+      if (response?.data?.success === false) {
+        throw new Error(translations.error.description || 'Error al actualizar la contraseña');
+      }
+    
+      notification.success(
+        translations.success.title,
+        translations.success.description || translations.success.description
+      );
+
+      await fetchUser(); // Refresh user data
       onClose();
     } catch (error) {
-      // Show error notification
+      console.log(error?.response?.data.message || error.message);
       notification.error(
-        translations.error.title,
-        error.message || translations.error.description
+        translations.error.title || 'Error',
+        error?.response?.data?.message || error.message || translations.error.description
       );
     } finally {
       setIsSubmitting(false);
@@ -188,120 +205,123 @@ const CambiarMiContraseña = ({ show, onClose }) => {
       height="auto"
       mobileHeight="auto"
     >
-      <ModalContent theme={theme}>
-        <ModalTitle level={3} theme={theme}>{translations.title}</ModalTitle>
-        
-        <FormContainer
-          form={form}
-          layout="vertical"
-          onFinish={handleFinish}
-          autoComplete="off"
-        >
-          <FormItem
-            name="currentPassword"
-            label={translations.currentPassword}
-            required={false}
-            rules={[
-              { required: true, message: translations.validation.currentPasswordRequired }
-            ]}
-            theme={theme}
-          >
-            <InputGroup>
-              <Inputs 
-                placeholder={translations.placeholders.currentPassword}
-                type={showCurrentPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-              />
-              <ToggleButton 
-                type="button" 
-                onClick={() => togglePasswordVisibility('current')}
-                aria-label={showCurrentPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                theme={theme}
-              >
-                {showCurrentPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />}
-              </ToggleButton>
-            </InputGroup>
-          </FormItem>
+      <Spin spinning={isSubmitting}>
+        <ModalContent theme={theme}>
+          <ModalTitle level={3} theme={theme}>{translations.title}</ModalTitle>
           
-          <FormItem
-            name="newPassword"
-            label={translations.newPassword}
-            required={false}
-            rules={[
-              { required: true, message: translations.validation.newPasswordRequired },
-              { min: 6, message: translations.validation.minLength }
-            ]}
-            theme={theme}
+          <FormContainer
+            form={form}
+            layout="vertical"
+            onFinish={handleFinish}
+            autoComplete="off"
           >
-            <InputGroup>
-              <Inputs 
-                placeholder={translations.placeholders.newPassword}
-                type={showNewPassword ? 'text' : 'password'}
-                autoComplete="new-password"
-              />
-              <ToggleButton 
-                type="button" 
-                onClick={() => togglePasswordVisibility('new')}
-                aria-label={showNewPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                theme={theme}
-              >
-                {showNewPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />}
-              </ToggleButton>
-            </InputGroup>
-          </FormItem>
-          
-          <FormItem
-            name="confirmPassword"
-            label={translations.confirmPassword}
-            required={false}
-            dependencies={['newPassword']}
-            rules={[
-              { required: true, message: translations.validation.confirmPasswordRequired },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue('newPassword') === value) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(new Error(translations.validation.passwordsDoNotMatch));
-                },
-              }),
-            ]}
-            theme={theme}
-          >
-            <InputGroup>
-              <Inputs 
-                placeholder={translations.placeholders.confirmPassword}
-                type={showConfirmPassword ? 'text' : 'password'}
-                autoComplete="new-password"
-              />
-              <ToggleButton 
-                type="button" 
-                onClick={() => togglePasswordVisibility('confirm')}
-                aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                theme={theme}
-              >
-                {showConfirmPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />}
-              </ToggleButton>
-            </InputGroup>
-          </FormItem>
-          
-          <ButtonContainer>
-            <SecondaryButton 
-              onClick={handleCancel}
+            <FormItem
+              name="currentPassword"
+              label={translations.currentPassword}
+              required={false}
+              rules={[
+                { required: true, message: translations.validation.currentPasswordRequired }
+              ]}
               theme={theme}
             >
-              {translations.cancelButton || 'Cancelar'}
-            </SecondaryButton>
-            <MainButton 
-              type="submit" 
-              htmlType="submit" 
-              loading={isSubmitting}
+              <InputGroup>
+                <Inputs 
+                  placeholder={translations.placeholders.currentPassword}
+                  type={showCurrentPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                />
+                <ToggleButton 
+                  type="button" 
+                  onClick={() => togglePasswordVisibility('current')}
+                  aria-label={showCurrentPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  theme={theme}
+                >
+                  {showCurrentPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                </ToggleButton>
+              </InputGroup>
+            </FormItem>
+            
+            <FormItem
+              name="newPassword"
+              label={translations.newPassword}
+              required={false}
+              rules={[
+                { required: true, message: translations.validation.newPasswordRequired },
+                { min: 8, message: translations.validation.minLength },
+                { pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/, message: translations.validation.passwordComplexity },	
+              ]}
+              theme={theme}
             >
-              {translations.saveButton}
-            </MainButton>
-          </ButtonContainer>
-        </FormContainer>
-      </ModalContent>
+              <InputGroup>
+                <Inputs 
+                  placeholder={translations.placeholders.newPassword}
+                  type={showNewPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                />
+                <ToggleButton 
+                  type="button" 
+                  onClick={() => togglePasswordVisibility('new')}
+                  aria-label={showNewPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  theme={theme}
+                >
+                  {showNewPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                </ToggleButton>
+              </InputGroup>
+            </FormItem>
+            
+            <FormItem
+              name="confirmPassword"
+              label={translations.confirmPassword}
+              required={false}
+              dependencies={['newPassword']}
+              rules={[
+                { required: true, message: translations.validation.confirmPasswordRequired },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || getFieldValue('newPassword') === value) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(new Error(translations.validation.passwordsDoNotMatch));
+                  },
+                }),
+              ]}
+              theme={theme}
+            >
+              <InputGroup>
+                <Inputs 
+                  placeholder={translations.placeholders.confirmPassword}
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                />
+                <ToggleButton 
+                  type="button" 
+                  onClick={() => togglePasswordVisibility('confirm')}
+                  aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  theme={theme}
+                >
+                  {showConfirmPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                </ToggleButton>
+              </InputGroup>
+            </FormItem>
+            
+            <ButtonContainer>
+              <SecondaryButton 
+                onClick={handleCancel}
+                theme={theme}
+              >
+                {translations.cancelButton || 'Cancelar'}
+              </SecondaryButton>
+              <MainButton 
+                type="submit" 
+                htmlType="submit" 
+                loading={isSubmitting}
+              >
+                {translations.saveButton}
+              </MainButton>
+            </ButtonContainer>
+          </FormContainer>
+        </ModalContent>
+      </Spin>
     </Modal>
   );
 };

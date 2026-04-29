@@ -1,21 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Divider, Drawer } from 'antd';
+import { Layout, Menu, Drawer } from 'antd';
 import { 
-  DashboardOutlined, 
-  FormOutlined, 
-  CarOutlined, 
-  TeamOutlined, 
-  SettingOutlined,
   LogoutOutlined,
-  UserOutlined,
-  WarningOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  AppstoreOutlined,
   FileSearchOutlined,
   FileProtectOutlined,
-  RocketOutlined,
-  CheckSquareOutlined,
   IdcardOutlined,
   HomeOutlined,
   FileAddOutlined    // Added this import for the registration icon
@@ -26,7 +16,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { getTranslation } from '../../../utils/translations';
-import LoadingOverlay from '../CommonComponts/loadingOverlay';
+import LoadingOverlay from '../../LoadingOverlay';
 
 const { Sider } = Layout;
 
@@ -552,7 +542,6 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
   useEffect(() => {
     const pathSegments = location.pathname.split('/');
     const currentPath = pathSegments[pathSegments.length - 1];
-    
     if (currentPath === 'admin' || currentPath === 'empleado' || currentPath === 'ciudadano' || currentPath === '') {
       setSelectedKeys(['dashboard']);
     } else {
@@ -569,9 +558,8 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
         label: getTranslation('sidebar.dashboard', language)
       }
     ];
-    
     // Elementos para administrador
-    if (currentUser?.role === 'admin') {
+    if (currentUser?.role === 'administrador') {
       return [
         ...baseItems,
         {
@@ -628,9 +616,9 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
     setPageLoading(true);
     
     let path = '';
-    if (currentUser.role === 'admin') {
+    if (currentUser?.role === 'administrador') {
       path = `/panel/admin${key === 'dashboard' ? '' : `/${key}`}`;
-    } else if (currentUser.role === 'empleado') {
+    } else if (currentUser?.role === 'empleado') {
       path = `/panel/empleado${key === 'dashboard' ? '' : `/${key}`}`;
     } else {
       // Para ciudadano
@@ -647,7 +635,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
     // Simular tiempo de carga (puedes eliminar esto en producción)
     setTimeout(() => {
       setPageLoading(false);
-    }, 800); // Ajusta este tiempo según tus necesidades
+    }, 600); // Ajusta este tiempo según tus necesidades
     
     if (isMobile) {
       setMobileDrawerVisible(false);
@@ -663,8 +651,8 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
     <>
       <LogoContainer $collapsed={collapsed}>
         {themeToUse.currentTheme === 'themeDark' 
-          ? <img src="/src/assets/Lading/MotoTrackInvertedLogo.png" alt="MotoTrack" />
-          : <img src="/src/assets/Lading/MotoTrackLogo-2.png" alt="MotoTrack" />
+          ? <img src="https://res.cloudinary.com/dx87s3lws/image/upload/v1745288919/MotoTrackInvertedLogo_o0c2nj.png" alt="MotoTrack" />
+          : <img src="https://res.cloudinary.com/dx87s3lws/image/upload/v1745288750/MotoTrackLogo-2_tjislj.png" alt="MotoTrack" />
         }
       </LogoContainer>
       
@@ -672,15 +660,15 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
       {themeToUse.currentTheme === 'themeDark' 
         ? <DividerImage 
             src={collapsed 
-              ? "/src/assets/Dashboard/CollapseDividerDarkMode.svg" 
-              : "/src/assets/Dashboard/DarkModeDivider.svg"} 
+              ? "https://res.cloudinary.com/dx87s3lws/image/upload/v1745288996/CollapseDividerDarkMode_dct1ta.svg" 
+              : "https://res.cloudinary.com/dx87s3lws/image/upload/v1745289032/DarkModeDivider_jgkszd.svg"} 
             alt="divider" 
             $collapsed={collapsed} 
           />
         : <DividerImage 
             src={collapsed 
-              ? "/src/assets/Dashboard/CollapseDividerLightMode.svg" 
-              : "/src/assets/Dashboard/LightModeDivider.svg"} 
+              ? "https://res.cloudinary.com/dx87s3lws/image/upload/v1745289126/CollapseDividerLightMode_uggfvs.svg" 
+              : "https://res.cloudinary.com/dx87s3lws/image/upload/v1745289137/LightModeDivider_casldd.svg"} 
             alt="divider" 
             $collapsed={collapsed} 
           />
@@ -698,15 +686,15 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
       {themeToUse.currentTheme === 'themeDark' 
         ? <DividerImage 
             src={collapsed 
-              ? "/src/assets/Dashboard/CollapseDividerDarkMode.svg" 
-              : "/src/assets/Dashboard/DarkModeDivider.svg"} 
+              ? "https://res.cloudinary.com/dx87s3lws/image/upload/v1745288996/CollapseDividerDarkMode_dct1ta.svg" 
+              : "https://res.cloudinary.com/dx87s3lws/image/upload/v1745289032/DarkModeDivider_jgkszd.svg"}
             alt="divider" 
             $collapsed={collapsed} 
           />
         : <DividerImage 
             src={collapsed 
-              ? "/src/assets/Dashboard/CollapseDividerLightMode.svg" 
-              : "/src/assets/Dashboard/LightModeDivider.svg"} 
+              ? "https://res.cloudinary.com/dx87s3lws/image/upload/v1745289126/CollapseDividerLightMode_uggfvs.svg" 
+              : "https://res.cloudinary.com/dx87s3lws/image/upload/v1745289137/LightModeDivider_casldd.svg"} 
             alt="divider" 
             $collapsed={collapsed} 
           />

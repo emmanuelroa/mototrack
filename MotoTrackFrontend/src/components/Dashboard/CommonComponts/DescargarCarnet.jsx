@@ -89,166 +89,75 @@ const DescargarCarnet = ({
   const [loading, setLoading] = React.useState(false);
   const [previewVisible, setPreviewVisible] = React.useState(false);
   
-  // Default data for the carnet
-  const defaultData = {
-    placa: 'K01921231',
-    propietario: 'Juan Carlos Pérez Rodríguez',
-    modelo: 'Yamaha YBR 125 (2021)',
-    registro: 'MOT-2023-039',
-    fechaEmision: '11/02/2023'
-  };
-  
-  // Merge provided data with defaults
-  const carnetData = { ...defaultData, ...motorcycleData };
-  
   // Function to generate and download the PDF
   const generateCarnetPDF = async () => {
     setLoading(true);
-    
+  
     try {
-      // Create a new PDF document
       const doc = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
-        format: [210, 150] // Increased height from 130 to 150 for more bottom space
+        format: [210, 150]
       });
-      
+  
       // Set white background
       doc.setFillColor(255, 255, 255);
-      doc.rect(0, 0, 210, 150, 'F'); // Adjusted rect to match new height
-      
-      // Load images - convert to base64 first
-      try {
-        const loadImage = (src) => {
-          return new Promise((resolve) => {
-            const img = new Image();
-            img.crossOrigin = 'Anonymous';
-            img.onload = () => {
-              const canvas = document.createElement('canvas');
-              canvas.width = img.width;
-              canvas.height = img.height;
-              const ctx = canvas.getContext('2d');
-              ctx.drawImage(img, 0, 0);
-              resolve(canvas.toDataURL('image/png'));
-            };
-            img.onerror = () => {
-              console.error('Error loading image:', src);
-              resolve(null);
-            };
-            img.src = src;
-          });
-        };
-        
-        // Load both images in parallel
-        const [sdeLogoBase64, mototrackLogoBase64] = await Promise.all([
-          loadImage(sdeLogoImage),
-          loadImage(mototrackLogoImage)
-        ]);
-        
-        // Position images in the top corners with slight adjustments to prevent overlap
-        if (sdeLogoBase64) {
-          doc.addImage(sdeLogoBase64, 'PNG', 10, 5, 25, 25); // Smaller size, moved to corner
-        }
-        
-        // Make MotoTrack logo in opposite corner
-        if (mototrackLogoBase64) {
-          doc.addImage(mototrackLogoBase64, 'PNG', 175, 5, 25, 25); // Smaller size, moved to corner
-        }
-      } catch (imageError) {
-        console.error('Error processing images:', imageError);
-        // Continue without images if they fail to load
-      }
-      
-      // Add "Carnet Digital" title in the center with larger font
+      doc.rect(0, 0, 210, 150, 'F');
+  
+      // Add "Carnet Digital" title
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(36); // Increased font size
+      doc.setFontSize(36);
       doc.text('Carnet Digital', 105, 25, { align: 'center' });
-      
-      // Add white rounded rectangle for the plate number - make it larger
-      doc.setFillColor(255, 255, 255);
-      doc.setDrawColor(220, 220, 220);
-      doc.roundedRect(25, 35, 160, 50, 5, 5, 'FD'); // Reduced height from 60 to 50
-      
-      // Add plate number in larger font with proper spacing
-      doc.setFontSize(90); // Decreased font size from 72 to 60
-      doc.setFont('helvetica', 'bold');
-      
-      // Calculate proper spacing based on plate length
-      const plateText = carnetData.placa;
-      
-      // Use less spacing or no spacing at all
-      // Option 1: No manual spacing (use the plate text as is)
+  
+      // Add plate number
+      const plateText = motorcycleData.placa ?? 'N/A'; // Valor predeterminado
+      doc.setFontSize(90);
       doc.text(plateText, 105, 70, { align: 'center' });
-      
-      // Or Option 2: Use minimal spacing for better readability (but less than before)
-      // const plateSpacing = plateText.length > 8 ? 0.5 : 1; 
-      // const plate = plateText.split('').join(' '.repeat(plateSpacing));
-      // doc.text(plate, 105, 65, { align: 'center' });
-      
-      // Add dividing line below plate area with more space
-      doc.setDrawColor(220, 220, 220);
-      doc.setLineWidth(0.5);
-      doc.line(25, 95, 185, 95); // Moved up from 100 to 95
-      
-      // Create a more balanced two-column layout for the information
+      // Add owner information
+      const propietario = motorcycleData.propietario ?? 'Propietario no especificado';
+      const modelo = motorcycleData.modelo ?? 'Modelo no especificado';
+      const chasis = motorcycleData.chasis ?? 'Chasis no especificado';
+      const fechaEmision = motorcycleData.fechaEmision
+        ? new Date(motorcycleData.fechaEmision).toLocaleDateString()
+        : 'Fecha no especificada';
+  
       // Left column
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(120, 120, 120);
       doc.text('Propietario', 30, 105);
-      
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 0, 0);
-      doc.text(carnetData.propietario, 30, 112);
-      
-      doc.setFontSize(12);
+      doc.text(propietario, 30, 112);
+  
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(120, 120, 120);
       doc.text('Chasis', 30, 122);
-      
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 0, 0);
-      doc.text(carnetData.chasis || 'JH2PC35G1MM200020', 30, 129);
-      
+      doc.text(chasis, 30, 129);
+  
       // Right column
-      doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(120, 120, 120);
       doc.text('Motocicleta', 140, 105);
-      
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 0, 0);
-      doc.text(carnetData.modelo, 140, 112);
-      
-      doc.setFontSize(12);
+      doc.text(modelo, 140, 112);
+  
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(120, 120, 120);
       doc.text('Fecha de Emisión', 140, 122);
-      
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 0, 0);
-      doc.text(carnetData.fechaEmision, 140, 129);
-      
-      // Add footer content with more bottom spacing
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(150, 150, 150);
-      doc.text('Documento oficial del municipio de Santo Domingo Este & MotoTrack', 105, 145, { align: 'center' });
-      
-      // Add a decorative bottom line to create more space at bottom
-      doc.setDrawColor(240, 240, 240);
-      doc.setLineWidth(0.3);
-      doc.line(25, 140, 185, 140);  // Keep the decorative line
-      
-      // Save the PDF with a filename based on the plate number
-      doc.save(`carnet-digital-${carnetData.placa}.pdf`);
-      
+      doc.text(fechaEmision, 140, 129);
+  
+      // Save the PDF
+      doc.save(`carnet-digital-${plateText}.pdf`);
       message.success('Carnet digital descargado correctamente');
-      return true;
     } catch (error) {
       console.error('Error generating PDF:', error);
       message.error('Error al generar el carnet digital');
-      return false;
     } finally {
       setLoading(false);
     }
@@ -333,25 +242,25 @@ const DescargarCarnet = ({
             </div>
             
             <PlateContainer>
-              <PlateNumber>{carnetData.placa}</PlateNumber>
+              <PlateNumber>{motorcycleData.placa}</PlateNumber>
             </PlateContainer>
             
             <InfoGrid>
               <InfoItem>
                 <InfoLabel>Propietario</InfoLabel>
-                <InfoValue>{carnetData.propietario}</InfoValue>
+                <InfoValue>{motorcycleData.propietario}</InfoValue>
               </InfoItem>
               <InfoItem>
                 <InfoLabel>Motocicleta</InfoLabel>
-                <InfoValue>{carnetData.modelo}</InfoValue>
+                <InfoValue>{motorcycleData.modelo}</InfoValue>
               </InfoItem>
               <InfoItem>
                 <InfoLabel>Registro</InfoLabel>
-                <InfoValue>{carnetData.registro}</InfoValue>
+                <InfoValue>{motorcycleData.registro}</InfoValue>
               </InfoItem>
               <InfoItem>
                 <InfoLabel>Emisión</InfoLabel>
-                <InfoValue>{carnetData.fechaEmision}</InfoValue>
+                <InfoValue>{motorcycleData.fechaEmision}</InfoValue>
               </InfoItem>
             </InfoGrid>
           </PreviewFrame>

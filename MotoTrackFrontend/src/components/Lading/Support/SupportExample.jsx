@@ -3,6 +3,7 @@ import { Form, Input, Button, message } from 'antd';
 import styled from 'styled-components';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
+import axios from 'axios';
 
 const FormContainer = styled(motion.div)`
   max-width: 800px;
@@ -111,6 +112,8 @@ function SupportExample() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const controls = useAnimation();
+  const api_url = import.meta.env.VITE_API_URL;
+
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.05, // Lowered from 0.2
@@ -126,18 +129,28 @@ function SupportExample() {
   const handleSubmit = async (values) => {
     setLoading(true);
     
-    // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('Form submitted:', values);
-      setSuccess(true);
-      form.resetFields();
-      
-      // Reset success message after 5 seconds
-      setTimeout(() => {
+      const response = await axios.post(`${api_url}/api/contact`, {
+        nombre: values.nombre,
+        correo: values.email,
+        asunto: values.asunto,
+        mensaje: values.mensaje
+      });
+
+      if (response.data.success === true) {
+        // Primero muestra el mensaje de éxito
+        setSuccess(true);
+        
+        // Espera a que la animación de éxito se complete antes de resetear
+        setTimeout(() => {
+          form.resetFields();
+        }, 300); // 300ms es la duración de la animación
+
+        // Reset success message after 5 seconds
         setSuccess(false);
-      }, 5000);
-      
+      } else {
+        message.error('Hubo un error al enviar el mensaje. Por favor, inténtelo de nuevo.');
+      }     
     } catch (error) {
       message.error('Hubo un error al enviar el mensaje. Por favor, inténtelo de nuevo.');
     } finally {
@@ -278,12 +291,14 @@ function SupportExample() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
           >
             <StyledForm
               form={form}
               layout="vertical"
               onFinish={handleSubmit}
               requiredMark={false}
+              preserve={false}
             >
               <FormItemContainer variants={formItemVariants}>
                 <Form.Item

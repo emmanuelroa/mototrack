@@ -242,7 +242,7 @@ const Header = ({ collapsed }) => {
       setPageSubtitle(getTranslation('header.subtitles.welcome', language));
     }
   }, [location, language]);
-
+  
   // Se utiliza el componente ProfileDropdown para el menú de usuario
   const userMenu = (
     <ProfileDropdown currentUser={currentUser} logout={logout} />
@@ -258,8 +258,8 @@ const Header = ({ collapsed }) => {
       </HeaderLeft>
       
       <HeaderRight>
-        <Dropdown
-          dropdownRender={() => null /* menú de notificaciones si se desea */}
+        {/* <Dropdown
+          dropdownRender={() => null 
           placement="bottomRight"
           trigger={['click']}
         >
@@ -270,7 +270,7 @@ const Header = ({ collapsed }) => {
           </NotificationContainer>
         </Dropdown>
         
-        <StyledDivider type="vertical" />
+        <StyledDivider type="vertical" /> */}
         
         <Dropdown
           dropdownRender={() => userMenu}
@@ -279,13 +279,13 @@ const Header = ({ collapsed }) => {
         >
           <UserInfo>
             <UserAvatar 
-              src={currentUser?.profileImage} 
-              icon={!currentUser?.profileImage && <UserOutlined />}
+              src={currentUser?.ftPerfil} 
+              icon={!currentUser?.ftPerfil && <UserOutlined />}
               size={40}
             />
             <UserDetails>
-              <UserName>{currentUser?.firstName} {currentUser?.lastName}</UserName>
-              <UserRole>{currentUser?.role === 'admin'
+              <UserName>{currentUser?.nombres} {currentUser?.apellidos}</UserName>
+              <UserRole>{currentUser?.role === 'administrador'
                 ? 'Administrador'
                 : currentUser?.role === 'empleado'
                   ? 'Empleado'

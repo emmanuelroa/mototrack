@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import Lottie from 'lottie-react';
-import LoginImage from '../../assets/Auth/Login.jpg';
+import LoginImage from '../../assets/Auth/Login.png';
 import RegisterImage from '../../assets/Auth/Register.jpg';
 import HomeIcon from '../../assets/Auth/home.json';
 
@@ -18,11 +18,10 @@ const Container = styled.div`
 `;
 
 const Image = styled.img`
-  width: 95%;
-  height: 95%;
-  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   object-position: center;
-  border-radius: 20px;
   user-select: none;
   -webkit-user-drag: none;
   -khtml-user-drag: none;

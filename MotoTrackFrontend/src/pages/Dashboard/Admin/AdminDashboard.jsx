@@ -30,45 +30,6 @@ const SectionContainer = styled.div`
 
 function AdminDashboard() {
   const { language } = useLanguage();
-  
-  // Data could be fetched from an API in a real implementation
-  const requestData = {
-    year: [
-      { month: 'Ene', total: 520 },
-      { month: 'Feb', total: 480 },
-      { month: 'Mar', total: 550 },
-      { month: 'Abr', total: 620 },
-      { month: 'May', total: 680 },
-      { month: 'Jun', total: 720 },
-      { month: 'Jul', total: 780 },
-      { month: 'Ago', total: 620 },
-      { month: 'Sep', total: 480 },
-      { month: 'Oct', total: 720 },
-      { month: 'Nov', total: 580 },
-      { month: 'Dic', total: 880 }
-    ],
-    quarter: [
-      { month: 'Oct', total: 720 },
-      { month: 'Nov', total: 580 },
-      { month: 'Dic', total: 880 },
-      { month: 'Ene', total: 750 }
-    ],
-    month: [
-      { month: 'Sem 1', total: 220 },
-      { month: 'Sem 2', total: 260 },
-      { month: 'Sem 3', total: 200 },
-      { month: 'Sem 4', total: 280 }
-    ],
-    week: [
-      { month: 'Lun', total: 55 },
-      { month: 'Mar', total: 62 },
-      { month: 'Mié', total: 48 },
-      { month: 'Jue', total: 72 },
-      { month: 'Vie', total: 80 },
-      { month: 'Sáb', total: 58 },
-      { month: 'Dom', total: 45 }
-    ]
-  };
 
   return (
     <ResponsiveContainer>
@@ -85,7 +46,7 @@ function AdminDashboard() {
       <Row gutter={[16, 24]} className="dashboard-row">
         <Col xs={24} sm={24} md={24} lg={24} xl={24}>
           <SectionContainer style={{ height: '450px' }}>
-            <AreaChart />
+            <AreaChart isAdmin={true}/>
           </SectionContainer>
         </Col>
       </Row>
@@ -94,17 +55,17 @@ function AdminDashboard() {
       <Row gutter={[16, 24]} className="dashboard-row">
         <Col xs={24} sm={24} md={8} lg={8} xl={8}>
           <SectionContainer>
-            <DistribucionPorMarca />
+            <DistribucionPorMarca isAdmin={true} />
           </SectionContainer>
         </Col>
         <Col xs={24} sm={24} md={8} lg={8} xl={8}>
           <SectionContainer>
-            <DistribucionPorTipo />
+            <DistribucionPorTipo isAdmin={true}/>
           </SectionContainer>
         </Col>
         <Col xs={24} sm={24} md={8} lg={8} xl={8}>
           <SectionContainer>
-            <DistribucionPorZona />
+            <DistribucionPorZona isAdmin={true} />
           </SectionContainer>
         </Col>
       </Row>

@@ -8,77 +8,166 @@ import Hero_ParallexEffect from './Hero_ParallexEffect';
 const HeroContainer = styled(motion.div)`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  padding: 1rem;
+  gap: clamp(2rem, 4vw, 4rem);
+  padding: clamp(1rem, 2vw, 2rem);
   max-width: 1400px;
   margin: 0 auto;
-  min-height: auto;
   place-items: center;
-  margin-top: 50px; /* Add space for the fixed navbar */
+  margin-top: clamp(60px, 10vh, 80px);
+  
+  @media (max-width: 992px) {
+    gap: clamp(1.5rem, 3vw, 3rem);
+    margin-top: clamp(50px, 8vh, 60px);
+  }
 
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    margin-top: 100px;
+  @media (max-width: 840px) {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1rem;
+    text-align: center;
+    margin-top: clamp(40px, 6vh, 45px);
+    align-items: center;
+  }
+
+  @media (max-width: 480px) {
+    margin-top: 30px;
+    padding: 0.5rem;
+    gap: 1rem;
   }
 `;
 
+// Ajustar el Hero_Welcome
+const WelcomeContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.5rem, 3vw, 2rem);
+  max-width: 600px;
+  
+  @media (max-width: 840px) {
+    align-items: center;
+    gap: 1rem;
+    padding: 0 1rem;
+    width: 100%;
+    max-width: 500px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 0.75rem;
+    padding: 0 0.5rem;
+  }
+`;
+
+const Title = styled.h1`
+  font-size: clamp(1.8rem, 3.5vw, 3rem);
+  font-weight: bold;
+  color: #1a1a1a;
+  line-height: 1.2;
+  margin: 0;
+  
+  @media (max-width: 840px) {
+    text-align: center;
+    font-size: clamp(1.6rem, 3vw, 2.5rem);
+    line-height: 1.3;
+  }
+
+  @media (max-width: 480px) {
+    font-size: clamp(1.4rem, 2.5vw, 1.8rem);
+    line-height: 1.4;
+  }
+`;
+
+const Subtitle = styled.p`
+  font-size: clamp(0.9rem, 1.8vw, 1.3rem);
+  color: #666;
+  line-height: 1.5;
+  margin: 0;
+  
+  @media (max-width: 840px) {
+    text-align: center;
+    font-size: clamp(0.85rem, 1.6vw, 1.1rem);
+    line-height: 1.6;
+    br {
+      display: none;
+    }
+  }
+
+  @media (max-width: 480px) {
+    font-size: clamp(0.8rem, 1.4vw, 0.9rem);
+    padding: 0 0.5rem;
+  }
+`;
+
+// Ajustar el ParallaxWrapper
 const ParallaxWrapper = styled(motion.div)`
   width: 100%;
   height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
+
+  
+  @media (max-width: 840px) {
+    margin-top: 1.5rem;
+    max-width: 450px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 480px) {
+    margin-top: 1rem;
+    max-width: 100%;
+    padding: 0 0.5rem;
+  }
 `;
 
-// Enhanced animation variants
+// Optimizar las animaciones
 const containerVariants = {
   hidden: { 
     opacity: 0,
-    y: 100  // Starting position from below (increased from 30)
+    y: 20
   },
   visible: {
     opacity: 1,
     y: 0,
     transition: {
-      type: "spring",
-      damping: 15,
-      stiffness: 100,
+      duration: window.innerWidth < 768 ? 0.4 : 0.6,
+      ease: "easeOut",
       when: "beforeChildren",
-      staggerChildren: 0.3,
-      duration: 1.2  // Slightly longer duration for smoother motion
+      staggerChildren: window.innerWidth < 768 ? 0.05 : 0.1
     }
   }
 };
 
 const welcomeVariants = {
-  hidden: { y: 60, opacity: 0 },  // Also increased y distance
+  hidden: { y: window.innerWidth < 768 ? 30 : 60, opacity: 0 },
   visible: {
     y: 0,
     opacity: 1,
     transition: {
       type: "spring",
-      damping: 12,
-      stiffness: 200,
-      delay: 0.1  // Small delay for better sequencing
+      damping: window.innerWidth < 768 ? 18 : 12,
+      stiffness: window.innerWidth < 768 ? 250 : 200,
+      delay: window.innerWidth < 768 ? 0.05 : 0.1
     }
   }
 };
 
 // Add animation for parallax wrapper
 const parallaxVariants = {
-  hidden: { y: 80, opacity: 0 },
+  hidden: { y: window.innerWidth < 768 ? 40 : 80, opacity: 0 },
   visible: {
     y: 0,
     opacity: 1,
     transition: {
       type: "spring",
-      damping: 14,
-      stiffness: 120,
-      delay: 0.2  // Slightly delayed after welcome content
+      damping: window.innerWidth < 768 ? 18 : 14,
+      stiffness: window.innerWidth < 768 ? 150 : 120,
+      delay: window.innerWidth < 768 ? 0.1 : 0.2
     }
   }
 };
 
-function Hero() {
+const Hero = () => {
   const [showParallax, setShowParallax] = useState(false);
   
   useEffect(() => {

@@ -95,13 +95,26 @@ function SolicitudesCards({
   ],
   cardProps = {}
 }) {
+  // Mapeo de valores de la API a los códigos internos
+  const mapApiStatusToInternal = (apiStatus) => {
+    switch (apiStatus) {
+      case 'Aprobada':
+        return 'MOTO_APROBADA';
+      case 'Pendiente':
+        return 'MOTO_PENDIENTE';
+      case 'Rechazada':
+        return 'MOTO_RECHAZADA';
+      default:
+        return 'UNKNOWN'; // Valor por defecto si no coincide
+    }
+  };
   return (
     <StyledCard {...cardProps}>
       <TitleContainer>
         <MotorcycleTitle level={5}>
-          {data[titleField] || 'No disponible'}
+          {(data.vehiculo.marca.nombre + ' ' + data.vehiculo.modelo.nombre + ' ' + data.vehiculo.año) || 'No disponible'}
         </MotorcycleTitle>
-        {data[statusField] && <StatusTag status={data[statusField]} />}
+        {data.solicitud.estadoDecision && <StatusTag status={mapApiStatusToInternal(data.solicitud.estadoDecision)} />}
       </TitleContainer>
       
       <Divider style={{ margin: '8px 0 16px' }} />
@@ -110,7 +123,9 @@ function SolicitudesCards({
         {infoFields.map((field, index) => (
           <InfoColumn key={field.key}>
             <InfoLabel>{field.label}</InfoLabel>
-            <InfoValue>{data[field.key] || 'No disponible'}</InfoValue>
+            <InfoValue>
+              {field.getValue ? field.getValue(data) : 'No disponible'}
+            </InfoValue>
           </InfoColumn>
         ))}
       </InfoContainer>

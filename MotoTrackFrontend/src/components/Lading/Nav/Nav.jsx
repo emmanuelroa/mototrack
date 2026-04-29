@@ -6,11 +6,10 @@ import { motion } from 'framer-motion';
 import LogoImg from '../../../assets/Lading/MotoTrackLogo.png';
 import { MenuOutlined, CloseOutlined } from '@ant-design/icons';
 
-// Convert NavContainer to a motion component
-const NavContainer = styled(motion.nav)`
+const NavContainer = styled.nav`
   padding: 0.8rem 2rem;
   background: white;
-  border-radius: 0 0 50px 50px; /* Rounded corners only at the bottom */
+  border-radius: 0 0 50px 50px;
   margin: 0 1rem;
   position: fixed;
   top: 0;
@@ -24,41 +23,13 @@ const NavContainer = styled(motion.nav)`
   @media (max-width: 768px) {
     padding: 0.8rem 1rem;
   }
+
+  @media (max-width: 1200px) {
+    padding: 0.8rem 1rem;
+    margin: 0 0.5rem;
+    max-width: calc(100% - 1rem);
+  }
 `;
-
-// Update the navbarVariants to have a more dramatic entrance animation
-const navbarVariants = {
-  hidden: { 
-    opacity: 0, 
-    y: -50,
-    scale: 0.9
-  },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 0.7,
-      ease: [0.6, 0.05, 0.01, 0.99], // Custom easing curve for more dynamic motion
-      when: "beforeChildren",
-      staggerChildren: 0.15 // Increased from 0.1 for more noticeable staggering
-    }
-  }
-};
-
-// Enhance the child variants for more dramatic entrances
-const childVariants = {
-  hidden: { opacity: 0, y: -25, scale: 0.95 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 0.5,
-      ease: [0.25, 0.1, 0.25, 1.0], // Custom cubic bezier for smoother motion
-    }
-  }
-};
 
 const NavWrapper = styled.div`
   display: flex;
@@ -71,12 +42,19 @@ const NavWrapper = styled.div`
 const Logo = styled.div`
   img {
     height: 110px;
+    padding-bottom: 15px;
     
-    @media (max-width: 768px) {
-      height: 80px;
+    @media (max-width: 1200px) {
+      height: 80px; // Reducido de 95px a 80px
+      padding-bottom: 10px;
     }
   }
-  padding: 0 0 0 1rem 0;
+  padding: 0;
+  
+  @media (max-width: 1200px) {
+    flex-shrink: 1;
+    margin-right: 0.5rem;
+  }
 `;
 
 const MenuContainer = styled.div`
@@ -87,6 +65,13 @@ const MenuContainer = styled.div`
   flex: 1;
   display: ${props => props.$isVisible ? 'flex' : 'none'};
   justify-content: center;
+
+  @media (max-width: 1200px) {
+    margin: 0 0.3rem;
+    flex: 0 1 auto;
+    min-width: 0; // Importante para permitir shrink
+    max-width: calc(100% - 300px); // Asegura espacio para los botones
+  }
 `;
 
 const StyledMenu = styled(Menu)`
@@ -97,7 +82,7 @@ const StyledMenu = styled(Menu)`
   align-items: center;
   position: relative;
   width: 100%;
-  
+
   .ant-menu-item {
     color: #1a1a1a;
     font-size: 1rem;
@@ -107,9 +92,23 @@ const StyledMenu = styled(Menu)`
     height: auto;
     line-height: 1.5;
     z-index: 1;
-    
+    transition: all 0.15s ease-out !important; /* Transición más rápida */
+
+    @media (max-width: 1200px) {
+      padding: 0.4rem 0.4rem;
+      margin: 0 1px !important;
+      font-size: 0.75rem; // Reducido
+      min-width: auto;
+    }
+
+    @media (max-width: 1000px) {
+      padding: 0.5rem 0.4rem;
+      margin: 0 1px !important;
+      font-size: 0.8rem;
+    }
+
     &:hover {
-      color:rgba(99, 101, 241, 0.49) !important;
+      color: rgba(99, 101, 241, 0.49) !important;
     }
 
     &.ant-menu-item-selected {
@@ -117,18 +116,36 @@ const StyledMenu = styled(Menu)`
       color: #6366f1 !important;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
       border-radius: 50px;
+      transition: all 0.1s ease-in !important; /* Transición aún más rápida para selected */
+    }
+
+    &.ant-menu-item-active {
+      background: transparent !important;
     }
 
     &::after {
       display: none !important;
     }
   }
+  
+  // Eliminar cualquier residuo de selección
+  .ant-menu-light-item-selected::after, 
+  .ant-menu-light:not(.ant-menu-horizontal) .ant-menu-item-selected::after {
+    opacity: 0 !important;
+    display: none !important;
+  }
 `;
 
 const ButtonContainer = styled.div`
   display: flex;
   gap: 1rem;
-  
+  flex-shrink: 0;
+
+  @media (max-width: 1200px) {
+    gap: 0.2rem;
+    min-width: auto;
+  }
+
   @media (max-width: 768px) {
     display: none;
   }
@@ -146,6 +163,13 @@ const LoginButton = styled(motion.button)`
   overflow: hidden;
   min-width: 120px;
   height: 38px;
+
+  @media (max-width: 1200px) {
+    min-width: 80px; // Reducido de 90px a 80px
+    padding: 0.4rem 0.4rem;
+    font-size: 0.75rem;
+    height: 34px;
+  }
 `;
 
 const RegisterButton = styled(motion.button)`
@@ -159,9 +183,15 @@ const RegisterButton = styled(motion.button)`
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
   min-width: 120px;
   height: 38px;
+
+  @media (max-width: 1200px) {
+    min-width: 80px; // Reducido de 90px a 80px
+    padding: 0.4rem 0.4rem;
+    font-size: 0.75rem;
+    height: 34px;
+  }
 `;
 
-// Mobile menu components
 const MobileMenuButton = styled.button`
   display: none;
   background: none;
@@ -169,7 +199,7 @@ const MobileMenuButton = styled.button`
   font-size: 1.5rem;
   cursor: pointer;
   color: #1a1a1a;
-  
+
   @media (max-width: 768px) {
     display: flex;
     align-items: center;
@@ -177,7 +207,7 @@ const MobileMenuButton = styled.button`
   }
 `;
 
-const MobileMenuOverlay = styled(motion.div)`
+const MobileMenuOverlay = styled.div`
   position: fixed;
   top: 0;
   left: 0;
@@ -188,7 +218,7 @@ const MobileMenuOverlay = styled(motion.div)`
   display: ${props => props.$isOpen ? 'block' : 'none'};
 `;
 
-const MobileMenuContainer = styled(motion.div)`
+const MobileMenuContainer = styled.div`
   position: fixed;
   top: 0;
   right: 0;
@@ -210,12 +240,12 @@ const MobileMenuHeader = styled.div`
   margin-bottom: 2rem;
 `;
 
-const MobileMenuItem = styled(motion.div)`
+const MobileMenuItem = styled.div`
   padding: 1rem;
   font-size: 1.2rem;
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
-  
+
   &.selected {
     color: #6366f1;
     font-weight: bold;
@@ -246,88 +276,60 @@ function Nav() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Implement scroll spy functionality
+  // Nuevo efecto para detectar secciones visibles durante el scroll
   useEffect(() => {
-    // Define section IDs to observe, including hero and prefooter
-    const sectionIds = [
-      'hero',
-      'characteristics', 
-      'how-it-works',
-      'users', 
-      'testimonials',
-      'collaboration', 
-      'faq',
-      'support',
-      'prefooter'
-    ];
-    
-    const observerOptions = {
-      root: null, // use the viewport
-      rootMargin: '-10% 0px -70% 0px', // detection zone adjustment
-      threshold: 0.1 // 10% visibility threshold
+    // Opciones para el Intersection Observer
+    const options = {
+      root: null,
+      rootMargin: '-80px 0px -60% 0px', // Ajustado para detectar antes
+      threshold: 0.05 // Reducido para activar más rápido
     };
 
-    const observerCallback = (entries) => {
+    // Callback que se ejecuta cuando una sección entra o sale del viewport
+    const handleIntersect = (entries) => {
+      // Encuentra la entrada con mayor ratio de intersección
+      let bestEntry = null;
+      let maxRatio = 0;
+      
       entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          // When section is visible, update the selected menu item
-          const sectionId = entry.target.id.toLowerCase();
-          
-          // If the section is hero or prefooter, deselect all menu items
-          if (sectionId === 'hero' || sectionId === 'prefooter') {
-            setSelectedKey('');
-          } else {
-            setSelectedKey(sectionId);
-          }
+        if (entry.isIntersecting && entry.intersectionRatio > maxRatio) {
+          maxRatio = entry.intersectionRatio;
+          bestEntry = entry;
         }
       });
+      
+      // Si encontramos una entrada visible, actualiza el selectedKey
+      if (bestEntry) {
+        setSelectedKey(bestEntry.target.id);
+      }
     };
 
-    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    const observer = new IntersectionObserver(handleIntersect, options);
     
-    // Start observing all sections
-    sectionIds.forEach(id => {
-      const element = document.getElementById(id);
-      if (element) {
-        observer.observe(element);
-      }
+    // Observar todas las secciones
+    const sections = document.querySelectorAll('section[id]');
+    sections.forEach(section => {
+      observer.observe(section);
     });
 
-    // Also check if user is at the bottom of the page (footer)
-    const handleScroll = () => {
-      if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100) {
-        // User is near the bottom of the page (footer area)
-        setSelectedKey('');
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-
-    // Clean up observers when component unmounts
+    // Limpieza al desmontar
     return () => {
-      sectionIds.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-          observer.unobserve(element);
-        }
-      });
-      window.removeEventListener('scroll', handleScroll);
+      if (observer) {
+        sections.forEach(section => {
+          observer.unobserve(section);
+        });
+      }
     };
   }, []);
 
-  // Handle click on menu item to scroll to section
-  const handleMenuClick = ({key}) => {
+  const handleMenuClick = ({ key }) => {
     setSelectedKey(key);
-    
-    // Smooth scroll to the selected section
-    const element = document.getElementById(key);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-    
-    // Close mobile menu if open
-    if (isMobileMenuOpen) {
-      setIsMobileMenuOpen(false);
+    setIsMobileMenuOpen(false);
+
+    // Desplázate a la sección correspondiente
+    const section = document.getElementById(key);
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -342,138 +344,112 @@ function Nav() {
   ];
 
   return (
-    <NavContainer
-      initial="hidden"
-      animate="visible"
-      variants={navbarVariants}
-    >
+    <NavContainer>
       <NavWrapper>
-        <motion.div variants={childVariants}>
-          <Logo>
-            <Link to="/">
-              <img src={LogoImg} alt="Logo" />
-            </Link>
-          </Logo>
-        </motion.div>
-        
-        <motion.div variants={childVariants} style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-          <MenuContainer $isVisible={windowWidth > 768}>
-            <StyledMenu
-              mode="horizontal"
-              selectedKeys={[selectedKey]}
-              onSelect={handleMenuClick}
-              items={menuItems.map(item => ({
-                ...item,
-                label: (
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                  >
-                    {item.label}
-                  </motion.div>
-                )
-              }))}
-            />
-          </MenuContainer>
-        </motion.div>
-        
-        <motion.div variants={childVariants}>
-          <ButtonContainer>
-            <Link to="/login">
-              <LoginButton
-                initial={{ border: "1px solid transparent" }}
-                whileHover={{ 
-                  scale: 1.05,
-                  color: "#6366f1",
-                  border: "1px solid #6366f1",
-                }}
-                whileTap={{ scale: 0.95 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 400,
-                  damping: 10
-                }}
-              >
-                Iniciar Sesión
-              </LoginButton>
-            </Link>
-            <Link to="/register">
-              <RegisterButton
-                whileHover={{ 
-                  scale: 1.05,
-                  background: "#4f46e5",
-                  boxShadow: "0 4px 12px rgba(99, 102, 241, 0.4)",
-                }}
-                whileTap={{ scale: 0.95 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 400,
-                  damping: 10
-                }}
-              >
-                Registrarse
-              </RegisterButton>
-            </Link>
-          </ButtonContainer>
-        </motion.div>
+        <Logo>
+          <Link to="/">
+            <img src={LogoImg} alt="Logo" />
+          </Link>
+        </Logo>
 
-        {/* Mobile Menu Button */}
-        <motion.div variants={childVariants}>
-          <MobileMenuButton onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-            <MenuOutlined />
-          </MobileMenuButton>
-        </motion.div>
-        
-        {/* Mobile Menu */}
-        <MobileMenuOverlay 
+        <MenuContainer $isVisible={windowWidth > 768}>
+          <StyledMenu
+            mode="horizontal"
+            selectedKeys={[selectedKey]}
+            onSelect={handleMenuClick}
+            items={menuItems}
+          />
+        </MenuContainer>
+
+        <ButtonContainer>
+          <Link to="/login">
+            <LoginButton
+              whileHover={{ 
+                scale: 1.05,
+                boxShadow: "0px 0px 8px rgba(99, 102, 241, 0.3)",
+                border: "1px solid rgba(99, 102, 241, 0.3)"
+              }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 10 }}
+            >
+              Iniciar Sesión
+            </LoginButton>
+          </Link>
+          <Link to="/register">
+            <RegisterButton
+              whileHover={{ 
+                scale: 1.05, 
+                boxShadow: "0px 0px 15px rgba(99, 102, 241, 0.5)",
+                background: "#5254ce"
+              }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 10 }}
+              initial={{ y: 0 }}
+              animate={{
+                y: [0, -2, 0],
+                transition: {
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                  duration: 1.5,
+                  ease: "easeInOut"
+                }
+              }}
+            >
+              Registrarse
+            </RegisterButton>
+          </Link>
+        </ButtonContainer>
+
+        <MobileMenuButton onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          <MenuOutlined />
+        </MobileMenuButton>
+
+        <MobileMenuOverlay
           $isOpen={isMobileMenuOpen}
           onClick={() => setIsMobileMenuOpen(false)}
         />
-        
-        <MobileMenuContainer
-          initial={{ x: "100%" }}
-          animate={{ x: isMobileMenuOpen ? 0 : "100%" }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        >
+
+        <MobileMenuContainer style={{ display: isMobileMenuOpen ? 'block' : 'none' }}>
           <MobileMenuHeader>
             <h2>Menú</h2>
             <CloseOutlined onClick={() => setIsMobileMenuOpen(false)} style={{ fontSize: '1.5rem', cursor: 'pointer' }} />
           </MobileMenuHeader>
-          
+
           {menuItems.map(item => (
-            <MobileMenuItem 
+            <MobileMenuItem
               key={item.key}
               className={selectedKey === item.key ? 'selected' : ''}
-              whileHover={{ x: 10 }}
-              onClick={() => {
-                handleMenuClick({key: item.key});
-              }}
+              onClick={() => handleMenuClick({ key: item.key })}
             >
               {item.label}
             </MobileMenuItem>
           ))}
-          
+
           <MobileButtonContainer>
             <Link to="/login" style={{ width: '100%' }}>
-              <LoginButton
+              <LoginButton 
                 style={{ width: '100%' }}
-                initial={{ border: "1px solid transparent" }}
                 whileHover={{ 
-                  color: "#6366f1",
-                  border: "1px solid #6366f1",
+                  scale: 1.02,
+                  boxShadow: "0px 0px 8px rgba(99, 102, 241, 0.3)",
+                  border: "1px solid rgba(99, 102, 241, 0.3)"
                 }}
-                whileTap={{ scale: 0.95 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 10 }}
               >
                 Iniciar Sesión
               </LoginButton>
             </Link>
             <Link to="/register" style={{ width: '100%' }}>
-              <RegisterButton
+              <RegisterButton 
                 style={{ width: '100%' }}
                 whileHover={{ 
-                  background: "#4f46e5",
+                  scale: 1.02, 
+                  boxShadow: "0px 0px 15px rgba(99, 102, 241, 0.5)",
+                  background: "#5254ce"
                 }}
-                whileTap={{ scale: 0.95 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 10 }}
               >
                 Registrarse
               </RegisterButton>

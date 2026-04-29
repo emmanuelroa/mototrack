@@ -119,7 +119,7 @@ const FooterLinks = () => {
         
         <LinkItem>
           <StyledLink 
-            onClick={(e) => handleLinkClick(e, 'FAQ')}
+            onClick={(e) => handleLinkClick(e, 'faq')}
           >
             <IconWrapper><RightOutlined /></IconWrapper>
             Preguntas Frecuentes

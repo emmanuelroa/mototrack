@@ -73,73 +73,64 @@ const DatosMotocicletasConfirmation = ({ motoData }) => {
   
   const t = translations[language] || translations.es;
   
+  console.log("DatosMotocicletasConfirmation está pasando motoData:", motoData);
+  
   return (
     <>
       <DataRow gutter={[16, 0]}>
         <Col xs={24} sm={12}>
           <DataLabel>{t.brand}</DataLabel>
-          <DataValue>{motoData.marca || "No disponible"}</DataValue>
+          <DataValue>{motoData?.vehiculo?.marca?.nombre || "No disponible"}</DataValue>
         </Col>
         <Col xs={24} sm={12}>
           <DataLabel>{t.model}</DataLabel>
-          <DataValue>{motoData.modelo || "No disponible"}</DataValue>
+          <DataValue>{motoData?.vehiculo?.modelo?.nombre || "No disponible"}</DataValue>
         </Col>
       </DataRow>
       
       <DataRow gutter={[16, 0]}>
         <Col xs={24} sm={12}>
           <DataLabel>{t.year}</DataLabel>
-          <DataValue>{motoData.año || "No disponible"}</DataValue>
+          <DataValue>{motoData?.vehiculo?.año || "No disponible"}</DataValue>
         </Col>
         <Col xs={24} sm={12}>
           <DataLabel>{t.color}</DataLabel>
-          <DataValue>{motoData.color || "No disponible"}</DataValue>
+          <DataValue>{motoData?.vehiculo?.color || "No disponible"}</DataValue>
         </Col>
       </DataRow>
       
       <DataRow gutter={[16, 0]}>
         <Col xs={24} sm={12}>
           <DataLabel>{t.engineSize}</DataLabel>
-          <DataValue>{motoData.cilindraje || "No disponible"} cc</DataValue>
+          <DataValue>{motoData?.vehiculo?.cilindraje || "No disponible"}</DataValue>
         </Col>
         <Col xs={24} sm={12}>
           <DataLabel>{t.useType}</DataLabel>
-          <DataValue>{motoData.tipoUso || "No disponible"}</DataValue>
+          <DataValue>{motoData?.vehiculo?.tipoUso || "No disponible"}</DataValue>
         </Col>
       </DataRow>
       
       <DataRow gutter={[16, 0]}>
         <Col xs={24} sm={12}>
           <DataLabel>{t.chassisNumber}</DataLabel>
-          <DataValue>{motoData.numeroChasis || "No disponible"}</DataValue>
-        </Col>
-        <Col xs={24} sm={12}>
-          <DataLabel>{t.insurance}</DataLabel>
-          <DataValue>{motoData.seguro || "No disponible"}</DataValue>
+          <DataValue>{motoData?.vehiculo?.chasis || "No disponible"}</DataValue>
         </Col>
       </DataRow>
       
-      {motoData.seguro === 'Si' && (
+      {motoData.seguro  && (
         <>
           <DataRow gutter={[16, 0]}>
             <Col xs={24} sm={12}>
               <DataLabel>{t.insuranceProvider}</DataLabel>
-              <DataValue>{motoData.proveedorSeguro || "No disponible"}</DataValue>
+              <DataValue>{motoData.seguro.proveedor || "No disponible"}</DataValue>
             </Col>
             <Col xs={24} sm={12}>
               <DataLabel>{t.policyNumber}</DataLabel>
-              <DataValue>{motoData.numeroPoliza || "No disponible"}</DataValue>
+              <DataValue>{motoData.seguro.numeroPoliza || "No disponible"}</DataValue>
             </Col>
           </DataRow>
         </>
       )}
-      
-      <DataRow gutter={[16, 0]}>
-        <Col xs={24} sm={12}>
-          <DataLabel>{t.plateNumber}</DataLabel>
-          <DataValue>{motoData.placa || "No disponible"}</DataValue>
-        </Col>
-      </DataRow>
     </>
   );
 };

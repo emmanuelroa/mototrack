@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Row, Col, Select, DatePicker, Form } from 'antd';
+import { Row, Col, Select, DatePicker, Form, notification } from 'antd';
 import styled from 'styled-components';
 import FilterSection from '../../CommonComponts/FilterSection';
 import { useLanguage } from '../../../../context/LanguageContext';
+import { useAuth } from '../../../../context/AuthContext';
+import axios from 'axios';
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -15,44 +17,78 @@ const GestionFilter = ({
   isVisible, 
   onClose, 
   onApplyFilters, 
-  brands = [],
-  models = [],
   statuses = []
 }) => {
   const [form] = Form.useForm();
   const { language } = useLanguage();
   const [selectedBrand, setSelectedBrand] = useState('all');
-  
-  // If we don't have real data yet, use placeholder data
-  const placeholderBrands = useMemo(() => brands.length ? brands : [
-    { id: 'honda', name: 'Honda' },
-    { id: 'yamaha', name: 'Yamaha' },
-    { id: 'suzuki', name: 'Suzuki' },
-    { id: 'bajaj', name: 'Bajaj' }
-  ], [brands]);
-  
-  const placeholderModels = useMemo(() => models.length ? models : [
-    { id: 'wave', name: 'Wave', brandId: 'honda' },
-    { id: 'cbr', name: 'CBR', brandId: 'honda' },
-    { id: 'fz', name: 'FZ', brandId: 'yamaha' },
-    { id: 'pulsar', name: 'Pulsar', brandId: 'bajaj' }
-  ], [models]);
-  
-  const placeholderStatuses = useMemo(() => statuses.length ? statuses : [
-    { id: 'active', name: 'Activo' },
-    { id: 'pending', name: 'Pendiente' },
-    { id: 'expired', name: 'Expirado' }
-  ], [statuses]);
-  
-  // Memoize filtered models to prevent recalculation on every render
-  const filteredModels = useMemo(() => {
-    if (selectedBrand === 'all') {
-      return placeholderModels;
-    } else {
-      return placeholderModels.filter(model => model.brandId === selectedBrand);
+  const [brands, setBrands] = useState([]);
+  const [models, setModels] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const api_url = import.meta.env.VITE_API_URL;
+  const { getAccessToken } = useAuth();
+
+  // Fetch brands on component mount
+  useEffect(() => {
+    const fetchBrands = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`${api_url}/api/marca`, {
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`
+          }
+        });
+
+        if (response.data.success) {
+          setBrands(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching brands:', error);
+        notification.error({
+          message: language === 'es' ? 'Error' : 'Error',
+          description: language === 'es' 
+            ? 'Error al cargar las marcas' 
+            : 'Error loading brands',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBrands();
+  }, [language]); 
+
+  // Fetch models when brand changes
+  const fetchModels = async (brandId) => {
+    if (brandId === 'all') {
+      setModels([]);
+      return;
     }
-  }, [selectedBrand, placeholderModels]);
-  
+
+    try {
+      setLoading(true);
+      const response = await axios.get(`${api_url}/api/modelo?idMarca=${brandId}`, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`
+        }
+      });
+
+      if (response.data.success) {
+        setModels(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching models:', error);
+      notification.error({
+        message: language === 'es' ? 'Error' : 'Error',
+        description: language === 'es' 
+          ? 'Error al cargar los modelos' 
+          : 'Error loading models',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const translations = {
     es: {
       filterTitle: 'Filtros de búsqueda',
@@ -83,6 +119,7 @@ const GestionFilter = ({
   const handleBrandChange = (value) => {
     setSelectedBrand(value);
     form.setFieldValue('model', 'all');
+    fetchModels(value);
   };
   
   const handleApply = () => {
@@ -122,10 +159,11 @@ const GestionFilter = ({
               <Select 
                 placeholder={t.allBrands}
                 onChange={handleBrandChange}
+                loading={loading}
               >
                 <Option value="all">{t.allBrands}</Option>
-                {placeholderBrands.map(brand => (
-                  <Option key={brand.id} value={brand.id}>{brand.name}</Option>
+                {brands.map(brand => (
+                  <Option key={brand.id} value={brand.nombre}>{brand.nombre}</Option>
                 ))}
               </Select>
             </FormItem>
@@ -138,11 +176,12 @@ const GestionFilter = ({
             >
               <Select 
                 placeholder={t.allModels}
-                disabled={selectedBrand === 'all' ? false : filteredModels.length === 0}
+                disabled={selectedBrand === 'all' || loading}
+                loading={loading}
               >
                 <Option value="all">{t.allModels}</Option>
-                {filteredModels.map(model => (
-                  <Option key={model.id} value={model.id}>{model.name}</Option>
+                {models.map(model => (
+                  <Option key={model.id} value={model.nombre}>{model.nombre}</Option>
                 ))}
               </Select>
             </FormItem>
@@ -155,7 +194,7 @@ const GestionFilter = ({
             >
               <Select placeholder={t.allStatuses}>
                 <Option value="all">{t.allStatuses}</Option>
-                {placeholderStatuses.map(status => (
+                {statuses.map(status => (
                   <Option key={status.id} value={status.id}>{status.name}</Option>
                 ))}
               </Select>
